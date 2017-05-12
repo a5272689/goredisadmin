@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>{{ title }}</title>
+	<link rel="icon" type="image/png" href="/static/i/favicon.png">
+	<link rel="apple-touch-icon-precomposed" href="/static/i/app-icon72x72@2x.png">
+	<link rel="stylesheet" href="/static/css/amazeui.min.css" />
+	<link rel="stylesheet" href="/static/css/admin.css">
+	<link rel="stylesheet" href="/static/css/app.css">
+</head>
+
+<body data-type="login">
+
+  <div class="am-g myapp-login">
+	<div class="myapp-login-logo-block  tpl-login-max">
+		<div class="myapp-login-logo-text">
+			<div class="myapp-login-logo-text">
+				Redis Admin<span> Login</span>
+				<!--<i class="am-icon-skyatlas"></i>-->
+				
+			</div>
+		</div>
+
+		<div class="login-font">
+			<!--<i>Log In </i> or <span> Sign Up</span>-->
+		</div>
+		<div class="am-u-sm-10 login-am-center">
+			<!--<form class="am-form">-->
+				<fieldset class="am-form">
+					<div class="am-form-group">
+						<input type="text" id="login-username" placeholder="输入用户名">
+					</div>
+					<div class="am-form-group">
+						<input type="password" id="login-passwd" placeholder="输入密码">
+					</div>
+					<!--<p><button class="am-btn am-btn-default">登录</button></p>-->
+					<p><button id="loginbutton" class="am-btn am-btn-default">登录</button></p>
+					<p id="loginwarn" style="color: #be2924;float: right;padding: 0 10px 0;margin: 0;display: none"></p>
+				</fieldset>
+			<!--</form>-->
+		</div>
+	</div>
+</div>
+
+  <script src="/static/js/jquery.min.js"></script>
+  <script src="/static/js/amazeui.min.js"></script>
+  <script src="/static/js/login.js"></script>
+  <!--<script src="static/js/app.js"></script>-->
+</body>
+
+</html>
