@@ -14,6 +14,7 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)
 	session.Set("hello", "world2")
 	http.SetCookie(w,&http.Cookie{Name:"csrftoken",Value:string(time.Now().String()),MaxAge:60})
+	fmt.Println(r.URL.Path)
 	fmt.Println(ConfLoad())
 	fmt.Fprintln(w, "a")
 	//http.Redirect(w,r,"/",http.StatusFound)
