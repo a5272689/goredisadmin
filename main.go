@@ -23,7 +23,7 @@ func main() {
 		fmt.Println(err)
 	}
 	sessionsH:=sessions.Sessions("my_session", store)
-	userauth:=modules.NewAuth()
+	userauth:=new(modules.AuthInfo)
   	n.Use(sessionsH)
 	n.Use(userauth)
 	n.Use(negroni.NewStatic(http.Dir(".")))
