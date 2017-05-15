@@ -23,9 +23,9 @@ func main() {
 		fmt.Println(err)
 	}
 	sessionsH:=sessions.Sessions("my_session", store)
-	testauth:=modules.NewAuth()
+	userauth:=modules.NewAuth()
   	n.Use(sessionsH)
-	n.Use(testauth)
+	n.Use(userauth)
 	n.Use(negroni.NewStatic(http.Dir(".")))
 	n.UseHandler(r)
 	listenaddr:=fmt.Sprintf("%v:%v",rac.Listen,rac.Port)
