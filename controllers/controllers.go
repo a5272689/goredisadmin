@@ -59,6 +59,7 @@ type LoginResult struct {
 
 func LoginAuth(w http.ResponseWriter, r *http.Request)  {
 	w.Header().Add("Content-Type","application/json")
+	session := sessions.GetSession(r)
 	result:=new(LoginResult)
 	r.ParseForm()
 	username:=r.PostForm.Get("username")
@@ -68,8 +69,9 @@ func LoginAuth(w http.ResponseWriter, r *http.Request)  {
 	h.Write([]byte(passwd))
 	h.Write([]byte(string(len(passwd))))
 	h.Write([]byte("goredisadmin"))
-	passwd=fmt.Sprintf("%x", h.Sum(nil))
-	if dbpass==passwd{
+	tmp_passwd:=fmt.Sprintf("%x", h.Sum(nil))
+	if dbpass==tmp_passwd && len(passwd)>0{
+		session.Set("user",username)
 		result.Result=true
 	}else {
 		result.Info=fmt.Sprintf("用户%v认证失败！！！",username)

@@ -8,6 +8,7 @@ import (
 	"github.com/goincremental/negroni-sessions/redisstore"
 	"net/http"
 	"goredisadmin/controllers"
+	"goredisadmin/modules"
 )
 
 
@@ -22,11 +23,12 @@ func main() {
 		fmt.Println(err)
 	}
 	sessionsH:=sessions.Sessions("my_session", store)
+	testauth:=modules.NewAuth()
   	n.Use(sessionsH)
+	n.Use(testauth)
 	n.Use(negroni.NewStatic(http.Dir(".")))
 	n.UseHandler(r)
 	listenaddr:=fmt.Sprintf("%v:%v",rac.Listen,rac.Port)
 	n.Run(listenaddr)
-
 }
 
