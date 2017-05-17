@@ -8,14 +8,18 @@ import (
 	"encoding/json"
 	"github.com/flosch/pongo2"
 	"goredisadmin/models"
+	"goredisadmin/utils"
 )
 
 func MainHandler(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)
 	http.SetCookie(w,&http.Cookie{Name:"csrftoken",Value:string(time.Now().String()),MaxAge:60})
 	fmt.Println(r.URL.Path)
-	fmt.Println(ConfLoad())
+	fmt.Println(utils.ConfLoad())
 	fmt.Fprintln(w, session.Get("user"))
+	userdb:=&models.User{UserName:"jkljdaklsjfkl"}
+	dbpass,err:=userdb.GetPassWord()
+	fmt.Println(dbpass,err)
 	//http.Redirect(w,r,"/",http.StatusFound)
 
 }

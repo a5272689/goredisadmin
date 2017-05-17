@@ -31,20 +31,12 @@ func  (u *User)HashPasswd(passwd string) (string) {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-//func (u *User)Save() (error) {
-//	if u.Role!=""{
-//		setrole,err:=Redis.Cmd("set","goredisadmin:userrole:"+u.UserName,u.Role).Str()
-//		if err!=nil{
-//			return err
-//		}
-//		fmt.Println(setrole)
-//	}
-//	if len(u.PassWord)!=""{
-//		setrole,err:=Redis.Cmd("set","goredisadmin:userrole:"+u.UserName,u.Role).Str()
-//		if err!=nil{
-//			return err
-//		}
-//		fmt.Println(setrole)
-//	}
-//	return nil
-//}
+func  (u *User)ChangePasswd(passwd string) (error) {
+	hashpasswd:=u.HashPasswd(passwd)
+	return CheckredisResult(Redis.Cmd("set","goredisadmin:user:"+u.UserName,hashpasswd).Str())
+}
+
+func  (u *User)ChangeRole(role string) (error) {
+	return CheckredisResult(Redis.Cmd("set","goredisadmin:userrole:"+u.UserName,role).Str())
+}
+

@@ -7,8 +7,8 @@ import (
 	"goredisadmin/routers"
 	"github.com/goincremental/negroni-sessions/redisstore"
 	"net/http"
-	"goredisadmin/controllers"
 	"goredisadmin/modules"
+	"goredisadmin/utils"
 )
 
 
@@ -17,7 +17,7 @@ import (
 func main() {
 	r:= routers.Urls()
 	n := negroni.Classic()
-	rac,rc,cc:=controllers.Rac,controllers.Rc,controllers.Cc
+	rac,rc,cc:=utils.Rac,utils.Rc,utils.Cc
 	store,err:=redisstore.New(20,"tcp",fmt.Sprintf("%v:%v",rc.Host,rc.Port),rc.Passwd,[]byte("secret123"))
 	if err!=nil{
 		fmt.Println(err)
