@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 	"encoding/json"
-	"crypto/sha256"
 	"github.com/flosch/pongo2"
+	"goredisadmin/models"
 )
 
 func MainHandler(w http.ResponseWriter, r *http.Request) {
@@ -57,12 +57,9 @@ func LoginAuth(w http.ResponseWriter, r *http.Request)  {
 	r.ParseForm()
 	username:=r.PostForm.Get("username")
 	passwd:=r.PostForm.Get("passwd")
-	dbpass,_:=Redis.Cmd("get","goredisadmin:user:"+username).Str()
-	h:=sha256.New()
-	h.Write([]byte(passwd))
-	h.Write([]byte(string(len(passwd))))
-	h.Write([]byte("goredisadmin"))
-	tmp_passwd:=fmt.Sprintf("%x", h.Sum(nil))
+	userinfo:=&models.User{UserName:username}
+	dbpass,_:=userinfo.GetPassWord()
+	tmp_passwd:=userinfo.HashPasswd(passwd)
 	if dbpass==tmp_passwd && len(passwd)>0{
 		session.Set("user",username)
 		result.Result=true

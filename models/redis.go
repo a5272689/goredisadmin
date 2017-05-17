@@ -1,12 +1,13 @@
-package controllers
+package models
 
 import (
 	"github.com/mediocregopher/radix.v2/redis"
+	"goredisadmin/controllers"
 	"fmt"
 )
 
 func NewRedis() (*redis.Client,error)  {
-	rc:=Rc
+	rc:=controllers.Rc
 	client, err := redis.Dial("tcp", fmt.Sprintf("%v:%v",rc.Host,rc.Port))
 	if err!=nil{
 		return client,err
@@ -15,13 +16,13 @@ func NewRedis() (*redis.Client,error)  {
 		rs:=client.Cmd("auth",rc.Passwd)
 		result,_:=rs.Str()
 		if result!="OK"{
-			Logger.Println("redis %v:%v 认证失败！！！",rc.Host,rc.Port)
+			controllers.Logger.Println("redis %v:%v 认证失败！！！",rc.Host,rc.Port)
 		}
 	}
 	rs:=client.Cmd("ping")
 	result,_:=rs.Str()
 	if result!="PONG"{
-		Logger.Println("redis %v:%v 连接失败！！！，ping结果：%v",rc.Host,rc.Port,result)
+		controllers.Logger.Println("redis %v:%v 连接失败！！！，ping结果：%v",rc.Host,rc.Port,result)
 	}
 	return client,err
 }
