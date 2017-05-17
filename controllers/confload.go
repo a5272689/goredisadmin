@@ -16,14 +16,19 @@ type RedisConf struct {
 	Port  int `ini:"port"`
 	Passwd string `ini:"passwd"`
 }
-
-func ConfLoad() (*RedisAdminConf,*RedisConf) {
+type CasConf struct {
+	CasUrl string `ini:"casurl"`
+	RedirectPath  string `ini:"redirectpath"`
+}
+func ConfLoad() (*RedisAdminConf,*RedisConf,*CasConf) {
 	rac := new(RedisAdminConf)
 	rac.Port=3000
 	rac.Listen="0.0.0.0"
 	rc := new(RedisConf)
 	rc.Port=6379
 	rc.Host="127.0.0.1"
+	cc:=new(CasConf)
+	cc.RedirectPath="/"
 	logger:=Logger
 	selfpath,_:=filepath.Abs(os.Args[0])
 	basedir,_:=filepath.Split(selfpath)
@@ -31,11 +36,12 @@ func ConfLoad() (*RedisAdminConf,*RedisConf) {
 	cfg, err := ini.Load(defaultConf)
 	if err!=nil{
 		logger.Println(fmt.Sprintf("[info] 加载配置文件：%v失败！！！",defaultConf))
-		return rac,rc
+		return rac,rc,cc
 	}
 	cfg.MapTo(rac)
 	cfg.Section("Redis").MapTo(rc)
-	return rac,rc
+	cfg.Section("Cas").MapTo(cc)
+	return rac,rc,cc
 }
 
-var Rac,Rc=ConfLoad()
+var Rac,Rc,Cc=ConfLoad()

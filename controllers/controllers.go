@@ -4,51 +4,43 @@ import (
 	"net/http"
 	"github.com/goincremental/negroni-sessions"
 	"fmt"
-	"github.com/flosch/pongo2"
 	"time"
 	"encoding/json"
 	"crypto/sha256"
+	"github.com/flosch/pongo2"
 )
 
 func MainHandler(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)
-	session.Set("hello", "world2")
 	http.SetCookie(w,&http.Cookie{Name:"csrftoken",Value:string(time.Now().String()),MaxAge:60})
 	fmt.Println(r.URL.Path)
 	fmt.Println(ConfLoad())
-	fmt.Fprintln(w, "a")
+	fmt.Fprintln(w, session.Get("user"))
 	//http.Redirect(w,r,"/",http.StatusFound)
 
 }
 
 
-func Main2Handler(w http.ResponseWriter, r *http.Request) {
-
+func Logout(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)
-	tpl,err:=pongo2.FromFile("views/abcd.html")
-	tplExample := pongo2.Must(tpl,err)
-	abc,_:=tplExample.ExecuteBytes(pongo2.Context{"user": "hjd","qq":"123","user2":session.Get("hello")})
-	for _,c:=range r.Cookies(){
-		fmt.Println(c.Name,c.Value)
-	}
-
-	//session.Set("hello", "world")
-	//http.Redirect(w,r,"/a",http.StatusFound)
-	fmt.Fprintln(w, string(abc))
-
-	//fmt.Println(Redis.Cmd("set","goredisadmin:user:abc","av"))
-
-	//http.ResponseWriter()
+	session.Clear()
+	http.Redirect(w,r,"/",http.StatusFound)
 }
 
 func Login(w http.ResponseWriter, r *http.Request)  {
 	session := sessions.GetSession(r)
+	casuser:=session.Get("casuser")
+	r.ParseForm()
+	if casuser!=nil{
+		session.Set("user",casuser)
+	}
 	user:=session.Get("user")
+	fmt.Println(casuser,user)
 	if user==nil{
 		tpl,err:=pongo2.FromFile("views/login.html")
 		tpl = pongo2.Must(tpl,err)
 		tpl.ExecuteWriter(pongo2.Context{"title":"Redis Admin Login"}, w)
-	}else {
+	} else {
 		http.Redirect(w,r,"/",http.StatusFound)
 	}
 }
