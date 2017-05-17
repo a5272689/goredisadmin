@@ -4,24 +4,27 @@ import (
 	"net/http"
 	"github.com/goincremental/negroni-sessions"
 	"fmt"
-	"time"
+	//"time"
 	"encoding/json"
 	"github.com/flosch/pongo2"
 	"goredisadmin/models"
-	"goredisadmin/utils"
+	//"goredisadmin/utils"
 )
 
 func MainHandler(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)
-	http.SetCookie(w,&http.Cookie{Name:"csrftoken",Value:string(time.Now().String()),MaxAge:60})
-	fmt.Println(r.URL.Path)
-	fmt.Println(utils.ConfLoad())
-	fmt.Fprintln(w, session.Get("user"))
-	userdb:=&models.User{UserName:"jkljdaklsjfkl"}
-	dbpass,err:=userdb.GetPassWord()
-	fmt.Println(dbpass,err)
+	//http.SetCookie(w,&http.Cookie{Name:"csrftoken",Value:string(time.Now().String()),MaxAge:60})
+	//fmt.Println(r.URL.Path)
+	//fmt.Println(utils.ConfLoad())
+	//fmt.Fprintln(w, session.Get("user"))
+	//userdb:=&models.User{UserName:"jkljdaklsjfkl"}
+	//dbpass,err:=userdb.GetPassWord()
+	//fmt.Println(dbpass,err)
 	//http.Redirect(w,r,"/",http.StatusFound)
-
+	tpl,err:=pongo2.FromFile("views/contents/index.html")
+	tpl = pongo2.Must(tpl,err)
+	fmt.Println(session.Get("user"))
+	tpl.ExecuteWriter(pongo2.Context{"username":session.Get("user")}, w)
 }
 
 
