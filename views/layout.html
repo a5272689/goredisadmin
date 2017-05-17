@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>GoRedisAdmin UI</title>
+    <!--<link rel="icon" type="image/png" href="static/i/favicon.png">-->
+    <!--<link rel="apple-touch-icon-precomposed" href="static/i/app-icon72x72@2x.png">-->
+    <link rel="stylesheet" href="static/css/amazeui.min.css" />
+    <link rel="stylesheet" href="static/css/admin.css">
+    <link rel="stylesheet" href="static/css/app.css">
+</head>
+
+<body data-type="index">
+
+{% include "head.html" %}
+<div class="tpl-page-container tpl-page-header-fixed">
+    {% include "leftlist.html" %}
+    {% block content %}{% endblock %}
+</div>
+
+<script src="static/js/jquery.min.js"></script>
+<script src="static/js/amazeui.min.js"></script>
+<!--<script src="static/js/iscroll.js"></script>-->
+<script src="static/js/app.js"></script>
+</body>
+</html>
