@@ -1,27 +1,60 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 
 <head>
+    <title>Dashboard | Klorofil - Free Bootstrap Dashboard Template</title>
     <meta charset="utf-8">
-    <title>GoRedisAdmin UI</title>
-    <!--<link rel="icon" type="image/png" href="static/i/favicon.png">-->
-    <!--<link rel="apple-touch-icon-precomposed" href="static/i/app-icon72x72@2x.png">-->
-    <link rel="stylesheet" href="static/css/amazeui.min.css" />
-    <link rel="stylesheet" href="static/css/admin.css">
-    <link rel="stylesheet" href="static/css/app.css">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!-- VENDOR CSS -->
+    <link rel="stylesheet" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/static/vendor/linearicons/style.css">
+    <link rel="stylesheet" href="/static/vendor/chartist/css/chartist-custom.css">
+    <!-- MAIN CSS -->
+    <link rel="stylesheet" href="/static/css/tidmain.css">
+    {% block newcss %}{% endblock %}
+    <!-- FOR DEMO PURPOSES ONLY. You should remove this in your project -->
+    <!--<link rel="stylesheet" href="/static/css/demo.css">-->
+    <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+    <!-- ICONS -->
+    <!--<link rel="apple-touch-icon" sizes="76x76" href="/static/img/apple-icon.png">-->
+    <!--<link rel="icon" type="image/png" sizes="96x96" href="/static/img/favicon.png">-->
 </head>
 
-<body data-type="index">
-
-{% include "head.html" %}
-<div class="tpl-page-container tpl-page-header-fixed">
+<body>
+<!-- WRAPPER -->
+<div id="wrapper">
+    <!-- NAVBAR -->
+    {% include "head.html" %}
+    <!-- END NAVBAR -->
+    <!-- LEFT SIDEBAR -->
     {% include "leftlist.html" %}
-    {% block content %}{% endblock %}
+    <!-- END LEFT SIDEBAR -->
+    <!-- MAIN -->
+    <div class="main">
+        <div class="main-content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    <!-- END MAIN -->
+    <div class="clearfix"></div>
+    <footer>
+        <div class="container-fluid">
+            <p class="copyright">&copy; 2017 <a href="/" target="_blank">首页</a>. All Rights Reserved.  <a href="/" target="_blank">GoRedisAdmin</a></p>
+        </div>
+    </footer>
 </div>
-
-<script src="static/js/jquery.min.js"></script>
-<script src="static/js/amazeui.min.js"></script>
-<!--<script src="static/js/iscroll.js"></script>-->
-<script src="static/js/app.js"></script>
+<!-- END WRAPPER -->
+<!-- Javascript -->
+<script src="/static/vendor/jquery/jquery.min.js"></script>
+<script src="/static/vendor/bootstrap/js/bootstrap.min.js"></script>
+<script src="/static/vendor/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+<script src="/static/vendor/jquery.easy-pie-chart/jquery.easypiechart.min.js"></script>
+<script src="/static/vendor/chartist/js/chartist.min.js"></script>
+<script src="/static/js/scripts/klorofil-common.js"></script>
+{% block newjs %}{% endblock %}
 </body>
+
 </html>

@@ -9,7 +9,14 @@ import (
 	"github.com/flosch/pongo2"
 	"goredisadmin/models"
 	//"goredisadmin/utils"
+	"time"
+	"strconv"
 )
+
+func initconText(r *http.Request) pongo2.Context {
+	session := sessions.GetSession(r)
+	return pongo2.Context{"username":session.Get("user"),"urlpath":r.URL.Path}
+}
 
 func MainHandler(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)
@@ -24,9 +31,75 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 	tpl,err:=pongo2.FromFile("views/contents/index.html")
 	tpl = pongo2.Must(tpl,err)
 	fmt.Println(session.Get("user"))
-	tpl.ExecuteWriter(pongo2.Context{"username":session.Get("user")}, w)
+	tpl.ExecuteWriter(initconText(r), w)
 }
 
+func Sentinels(w http.ResponseWriter, r *http.Request) {
+	session := sessions.GetSession(r)
+	tpl,err:=pongo2.FromFile("views/contents/sentinels.html")
+	tpl = pongo2.Must(tpl,err)
+	fmt.Println(session.Get("user"))
+	tpl.ExecuteWriter(initconText(r), w)
+}
+
+type bootstrapTableSentinelsData struct {
+	Rows []sentinelsData `json:"rows"`
+	Total int `json:"total"`
+}
+
+type sentinelsData struct {
+	Id int `json:"id"`
+	Sentinel_cluster_name string `json:"sentinel_cluster_name"`
+	Hostname string `json:"hostname"`
+	Port int `json:"port"`
+	Masters []string `json:"masters"`
+}
+
+func SentinelsDataAPI(w http.ResponseWriter, r *http.Request) {
+	alldata:=new(bootstrapTableSentinelsData)
+	alldata.Rows=[]sentinelsData{}
+	for i:=0;i<100;i++{
+		alldata.Rows=append(alldata.Rows,sentinelsData{Id:i,Sentinel_cluster_name:"TEST",Hostname:"test2",Port:123,Masters:[]string{}})
+	}
+	alldata.Total=len(alldata.Rows)
+	jsonresult,_:=json.Marshal(alldata)
+	fmt.Fprint(w,string(jsonresult))
+}
+
+func SentinelsDataChangeAPI(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type","application/json")
+	r.ParseForm()
+	fmt.Println(r.PostForm)
+	result:=new(JsonResult)
+	sentinelid:=r.PostForm.Get("sentinelid")
+	sentinel_cluster_name:=r.PostForm.Get("sentinel_cluster_name")
+	hostname:=r.PostForm.Get("hostname")
+	port,_:=strconv.Atoi(r.PostForm.Get("port"))
+	if sentinelid==""{
+		fmt.Println(sentinel_cluster_name,hostname,port)
+		_,err:=models.Redis.Lpush("goredisadmin:sentinels",strconv.Itoa(int(time.Now().UnixNano())))
+		if err!=nil{
+			result.Info=fmt.Sprintf("添加到list失败！！！错误信息：%v",err)
+		}else {
+			result.Result=true
+		}
+	}else {
+		sentinelid,err:=strconv.Atoi(sentinelid)
+		if err!=nil{
+			result.Info=fmt.Sprintf("sentinelid非整数！！！错误信息：%v",err)
+		}else {
+			sentinel_name,err:=models.Redis.Lindex("goredisadmin:sentinels",sentinelid)
+			if err!=nil{
+				result.Info=fmt.Sprintf("从list过去sentinel_name失败！！！错误信息：%v",err)
+			}else {
+				result.Result=true
+			}
+			fmt.Println(sentinel_name)
+		}
+	}
+	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
 
 func Logout(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)
@@ -52,7 +125,7 @@ func Login(w http.ResponseWriter, r *http.Request)  {
 	}
 }
 
-type LoginResult struct {
+type JsonResult struct {
 	Result bool `json:"result"`
 	Info string `json:"info"`
 }
@@ -60,7 +133,7 @@ type LoginResult struct {
 func LoginAuth(w http.ResponseWriter, r *http.Request)  {
 	w.Header().Add("Content-Type","application/json")
 	session := sessions.GetSession(r)
-	result:=new(LoginResult)
+	result:=new(JsonResult)
 	r.ParseForm()
 	username:=r.PostForm.Get("username")
 	passwd:=r.PostForm.Get("passwd")

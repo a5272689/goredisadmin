@@ -1,0 +1,75 @@
+{% extends "../layout.html" %}
+
+{% block newcss %}
+<link rel="stylesheet" href="/static/css/bootstrap-table.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h3 class="page-title">哨兵集群</h3>
+    <div class="row" id="tablerow">
+        <div class="row" style="margin-left: 5px;margin-bottom: -45px">
+            <div class="btn-group">
+                <button type="button" class="btn btn-success" id="newsentinel">新建</button>
+                <button type="button" class="btn btn-danger" id="delselectsentinels">删除</button>
+            </div>
+        </div>
+        <table id="sentinelstable"></table>
+    </div>
+    <div class="row" id="formrow" style="display: none">
+        <div class="col-md-4">
+            <!--表单-->
+            <div class="panel">
+                <div class="panel-heading">
+                    <h3 class="panel-title">新建</h3>
+                </div>
+
+                <div class="panel-body">
+                    <input type="hidden" id="sentinelid_form">
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="sentinel_cluster_name_form" class="col-sm-3 control-label">集群名称</label>
+                            <div class="col-sm-8">
+                                <input type="text" id="sentinel_cluster_name_form" class="form-control" placeholder="集群名称">
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="hostname_form" class="col-sm-3 control-label">主机名(IP)</label>
+                            <div class="col-sm-8">
+                                <input type="text" id="hostname_form" class="form-control" placeholder="0.0.0.0">
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="port_form" class="col-sm-3 control-label">端口</label>
+                            <div class="col-sm-8">
+                                <input type="text" id="port_form" class="form-control" placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <p style="color: #be2924" id="forminfo"></p>
+                    <div class="row">
+                        <div class="btn-group" style="float: right">
+                            <button type="button" class="btn btn-primary" id="sentinelssavebutton">保存</button>
+                            <button type="button" class="btn btn-default" id="sentinelscancelbutton">取消</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+{% block newjs %}
+<script src="/static/js/bootstrap-table.js"></script>
+<script src="/static/js/bootstrap-table-zh-CN.js"></script>
+<script src="/static/js/sentinels.js"></script>
+{% endblock %}
