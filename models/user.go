@@ -12,13 +12,13 @@ type User struct {
 }
 
 func (u *User)GetPassWord() (dbpass string,err error)  {
-	dbpass,err=Redis.Cmd("get","goredisadmin:user:"+u.UserName).Str()
+	dbpass,err=Redis.Get("goredisadmin:user:"+u.UserName)
 	u.PassWord=dbpass
 	return dbpass,err
 }
 
 func (u *User)GetRole() (role string,err error) {
-	role,err=Redis.Cmd("get","goredisadmin:userrole:"+u.UserName).Str()
+	role,err=Redis.Get("goredisadmin:userrole:"+u.UserName)
 	u.Role=role
 	return role,err
 }
@@ -33,10 +33,10 @@ func  (u *User)HashPasswd(passwd string) (string) {
 
 func  (u *User)ChangePasswd(passwd string) (error) {
 	hashpasswd:=u.HashPasswd(passwd)
-	return CheckredisResult(Redis.Cmd("set","goredisadmin:user:"+u.UserName,hashpasswd).Str())
+	return CheckredisResult(Redis.Set("goredisadmin:user:"+u.UserName,hashpasswd))
 }
 
 func  (u *User)ChangeRole(role string) (error) {
-	return CheckredisResult(Redis.Cmd("set","goredisadmin:userrole:"+u.UserName,role).Str())
+	return CheckredisResult(Redis.Set("goredisadmin:userrole:"+u.UserName,role))
 }
 

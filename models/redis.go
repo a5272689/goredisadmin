@@ -14,14 +14,12 @@ func NewRedis() (*redis.Client,error)  {
 		return client,err
 	}
 	if rc.Passwd!=""{
-		rs:=client.Cmd("auth",rc.Passwd)
-		result,_:=rs.Str()
+		result,_:=client.Auth(rc.Passwd)
 		if result!="OK"{
 			utils.Logger.Println("redis %v:%v 认证失败！！！",rc.Host,rc.Port)
 		}
 	}
-	rs:=client.Cmd("ping")
-	result,_:=rs.Str()
+	result,err:=client.Ping()
 	if result!="PONG"{
 		utils.Logger.Println("redis %v:%v 连接失败！！！，ping结果：%v",rc.Host,rc.Port,result)
 	}
