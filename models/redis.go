@@ -7,27 +7,31 @@ import (
 	"goredisadmin/utils"
 )
 
-func NewRedis() (*redis.Client,error)  {
-	rc:=utils.Rc
-	client, err := redis.Dial("tcp", fmt.Sprintf("%v:%v",rc.Host,rc.Port))
+func NewRedis(host string,port int,passwd string) (client *redis.Client,err error,conn,auth,ping bool)  {
+	client, err = redis.Dial("tcp", fmt.Sprintf("%v:%v",host,port))
 	defer client.Close()
 	if err!=nil{
-		return client,err
+		return client,err,conn,auth,ping
 	}
-	if rc.Passwd!=""{
-		result,_:=client.Auth(rc.Passwd)
+	conn=true
+	if passwd!=""{
+		result,_:=client.Auth(passwd)
 		if result!="OK"{
-			utils.Logger.Println("redis %v:%v 认证失败！！！",rc.Host,rc.Port)
+			utils.Logger.Println("redis %v:%v 认证失败！！！",host,port)
+			return client,err,conn,auth,ping
 		}
 	}
+	auth=true
 	result,err:=client.Ping()
 	if result!="PONG"{
-		utils.Logger.Println("redis %v:%v 连接失败！！！，ping结果：%v",rc.Host,rc.Port,result)
+		utils.Logger.Println("redis %v:%v 连接失败！！！，ping结果：%v",host,port,result)
+		return client,err,conn,auth,ping
 	}
-	return client,err
+	ping=true
+	return client,err,conn,auth,ping
 }
 
-var Redis,_=NewRedis()
+var Redis,_,_,_,_=NewRedis(utils.Rc.Host,utils.Rc.Port,utils.Rc.Passwd)
 
 func CheckredisResult(result string,err error) (error) {
 	if err!=nil{
