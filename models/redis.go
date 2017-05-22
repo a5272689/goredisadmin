@@ -10,6 +10,7 @@ import (
 func NewRedis() (*redis.Client,error)  {
 	rc:=utils.Rc
 	client, err := redis.Dial("tcp", fmt.Sprintf("%v:%v",rc.Host,rc.Port))
+	defer client.Close()
 	if err!=nil{
 		return client,err
 	}
