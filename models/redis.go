@@ -9,7 +9,6 @@ import (
 
 func NewRedis(host string,port int,passwd string) (client *redis.Client,err error,conn,auth,ping bool)  {
 	client, err = redis.Dial("tcp", fmt.Sprintf("%v:%v",host,port))
-	defer client.Close()
 	if err!=nil{
 		return client,err,conn,auth,ping
 	}

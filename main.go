@@ -7,6 +7,7 @@ import (
 	"goredisadmin/routers"
 	"github.com/goincremental/negroni-sessions/redisstore"
 	"net/http"
+	"goredisadmin/models"
 	"goredisadmin/modules"
 	"goredisadmin/utils"
 )
@@ -15,6 +16,7 @@ import (
 
 
 func main() {
+	defer models.Redis.Close()
 	r:= routers.Urls()
 	n := negroni.Classic()
 	rac,rc,cc:=utils.Rac,utils.Rc,utils.Cc
