@@ -54,6 +54,11 @@ function tableinit() {
             align:'center',
             valign: 'middle'
         }, {
+            field: 'version',
+            title: '版本号',
+            align:'center',
+            valign: 'middle'
+        }, {
             title: 'masters',
             align:'center',
             valign: 'middle',

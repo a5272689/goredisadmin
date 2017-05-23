@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"errors"
+	"strings"
 )
 
 type Sentinel struct {
@@ -98,6 +99,7 @@ func GetSentinels() []map[string]interface{} {
 		sentinelC,err,_,_,ping:=NewRedis(sentinelinfo[0],port,"")
 		masters:=[]string{}
 		masterrediss:=make(map[string][]map[string]string)
+		var version string
 		if err==nil{
 			mastersinfo,_:=sentinelC.Masters()
 			for _,masterinfo:=range mastersinfo{
@@ -111,9 +113,19 @@ func GetSentinels() []map[string]interface{} {
 				}
 				masterrediss[masterinfo["name"]]=redissinfo
 			}
+			info,_:=sentinelC.Info("Server")
+			infos:=strings.Split(info,"\n")
+			for _,infostr:=range infos{
+				infolist:=strings.Split(infostr,":")
+				if len(infolist)==2{
+					if infolist[0]=="redis_version"{
+						version=infolist[1]
+					}
+				}
+			}
 
 		}
-		sentinel:=map[string]interface{}{"id":id,"hostname":sentinelinfo[0],"port":port,
+		sentinel:=map[string]interface{}{"id":id,"hostname":sentinelinfo[0],"port":port,"version":version,
 			"masters":masters,"connection_status":ping,"master_rediss":masterrediss}
 		sentinels=append(sentinels,sentinel)
 	}

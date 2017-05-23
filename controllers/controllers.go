@@ -54,6 +54,7 @@ type sentinelsData struct {
 	Masters []string `json:"masters"`
 	ConnectionStatus bool `json:"connection_status"`
 	MasterRediss map[string][]map[string]string `json:"master_rediss"`
+	Version string `json:"version"`
 	
 }
 
@@ -65,7 +66,7 @@ func SentinelsDataAPI(w http.ResponseWriter, r *http.Request) {
 	//}
 
 	for _,sentinel:=range models.GetSentinels(){
-		alldata.Rows=append(alldata.Rows,sentinelsData{Id:sentinel["id"].(int),
+		alldata.Rows=append(alldata.Rows,sentinelsData{Id:sentinel["id"].(int),Version:sentinel["version"].(string),
 			//Sentinel_cluster_name:sentinel["sentinel_cluster_name"].(string),
 			Hostname:sentinel["hostname"].(string),Port:sentinel["port"].(int),Masters:sentinel["masters"].([]string),
 			ConnectionStatus:sentinel["connection_status"].(bool),MasterRediss:sentinel["master_rediss"].(map[string][]map[string]string),
