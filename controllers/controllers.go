@@ -9,7 +9,10 @@ import (
 	"github.com/flosch/pongo2"
 	"goredisadmin/models"
 	//"goredisadmin/utils"
+	"github.com/bitly/go-simplejson"
 	"strconv"
+	"strings"
+	"io/ioutil"
 )
 
 func initconText(r *http.Request) pongo2.Context {
@@ -48,7 +51,6 @@ type bootstrapTableSentinelsData struct {
 
 type sentinelsData struct {
 	Id int `json:"id"`
-	//Sentinel_cluster_name string `json:"sentinel_cluster_name"`
 	Hostname string `json:"hostname"`
 	Port int `json:"port"`
 	Masters []string `json:"masters"`
@@ -61,13 +63,8 @@ type sentinelsData struct {
 func SentinelsDataAPI(w http.ResponseWriter, r *http.Request) {
 	alldata:=new(bootstrapTableSentinelsData)
 	alldata.Rows=[]sentinelsData{}
-	//for i:=0;i<100;i++{
-	//	alldata.Rows=append(alldata.Rows,sentinelsData{Id:i,Sentinel_cluster_name:"TEST",Hostname:"test2",Port:123,Masters:[]string{}})
-	//}
-
 	for _,sentinel:=range models.GetSentinels(){
 		alldata.Rows=append(alldata.Rows,sentinelsData{Id:sentinel["id"].(int),Version:sentinel["version"].(string),
-			//Sentinel_cluster_name:sentinel["sentinel_cluster_name"].(string),
 			Hostname:sentinel["hostname"].(string),Port:sentinel["port"].(int),Masters:sentinel["masters"].([]string),
 			ConnectionStatus:sentinel["connection_status"].(bool),MasterRediss:sentinel["master_rediss"].(map[string][]map[string]string),
 		})
@@ -89,6 +86,63 @@ func SentinelsDataChangeAPI(w http.ResponseWriter, r *http.Request) {
 	result.Result=saveresult
 	result.Info=fmt.Sprintf("报错：%v",err)
 	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
+
+func Rediss(w http.ResponseWriter, r *http.Request) {
+	session := sessions.GetSession(r)
+	r.ParseForm()
+	redissstr:=strings.Join(r.Form["rediss"],"^")
+	tpl,err:=pongo2.FromFile("views/contents/rediss.html")
+	tpl = pongo2.Must(tpl,err)
+	fmt.Println(session.Get("user"))
+	context:=initconText(r)
+	context.Update(pongo2.Context{"redissstr":redissstr})
+	tpl.ExecuteWriter(context, w)
+}
+
+type bootstrapTableRedissData struct {
+	Rows []redissData `json:"rows"`
+	Total int `json:"total"`
+}
+
+type redissData struct {
+	Id int `json:"id"`
+	Hostname string `json:"hostname"`
+	Port int `json:"port"`
+	ConnectionStatus bool `json:"connection_status"`
+	Version string `json:"version"`
+}
+
+func RedissDataAPI(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	jsonob,_:=simplejson.NewJson(data)
+	redissstr,_:=jsonob.Get("rediss").String()
+	redisslist:=strings.Split(redissstr,"^")
+	redisinfoslist:=[]models.RedisInfo{}
+	for _,redisstr:=range redisslist{
+		redislist:=strings.Split(redisstr,":")
+		if len(redislist)==2{
+			redisport,err:=strconv.Atoi(redislist[1])
+			if err!=nil{
+				continue
+			}
+			redisinfoslist=append(redisinfoslist,models.RedisInfo{HostName:redislist[0],Port:redisport})
+		}
+	}
+	alldata:=new(bootstrapTableRedissData)
+	alldata.Rows=[]redissData{}
+	models.GetRediss(redisinfoslist...)
+	//for _,_:=range models.GetRediss(){
+	//	alldata.Rows=append(alldata.Rows,redissData{Id:sentinel["id"].(int),Version:sentinel["version"].(string),
+	//		Hostname:sentinel["hostname"].(string),Port:sentinel["port"].(int),Masters:sentinel["masters"].([]string),
+	//		ConnectionStatus:sentinel["connection_status"].(bool),MasterRediss:sentinel["master_rediss"].(map[string][]map[string]string),
+	//	})
+	//}
+	alldata.Total=len(alldata.Rows)
+	jsonresult,_:=json.Marshal(alldata)
 	fmt.Fprint(w,string(jsonresult))
 }
 

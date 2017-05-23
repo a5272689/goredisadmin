@@ -2,7 +2,7 @@
  * Created by root on 5/18/17.
  */
 
-$('#sentinelstable').bootstrapTable(tableinit());
+$('#redisstable').bootstrapTable(tableinit());
 
 function tableinit() {
     return {
@@ -16,8 +16,11 @@ function tableinit() {
         pageList:[10,15,20,30,50],
         sidePagination:'client',
         // clickToSelect:true,
-        url:'/sentinelsdata',
-
+        url:'/redissdata',
+        queryParams:function(params) {
+            params["rediss"]=$("#hiddenpostdata").text();
+            return params;
+        },
         method:'post',
         columns: [{
             checkbox:true
@@ -121,7 +124,7 @@ $('#sentinelssavebutton').click(function () {
 });
 
 $('#sentinelscancelbutton').click(function () {
-    $('#tablerow').show();
+    tablerowshow();
     $('#formrow').hide();
 });
 
@@ -149,18 +152,12 @@ function forminit(data) {
     $('#forminfo').hide()
 }
 
-function lookredis(mastername,id) {
-    var rediss=$('#sentinelstable').bootstrapTable('getRowByUniqueId', id)["master_rediss"][mastername];
-    var redissstr="";
-    for (var i in rediss){
-        redissstr+="rediss="+rediss[i]["hostname"]+':'+rediss[i]["port"].toString()+"&"
-    }
-    window.location.href="/rediss?"+redissstr;
-    console.log(rediss)
+function lookredis(id) {
+    var masterdata=$('#sentinelstable').bootstrapTable('getRowByUniqueId', id);
 }
 
 
 function tablerowshow() {
-    $('#sentinelstable').bootstrapTable("load",tableinit());
+    $('#sentinelstable').bootstrapTable("refresh",{});
     $('#tablerow').show();
 }
