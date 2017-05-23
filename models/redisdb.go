@@ -37,15 +37,18 @@ func GetRediss(redisinfos ...RedisInfo) []map[string]interface{} {
 	if err!=nil{
 		return rediss
 	}
+	fmt.Println(redisinfos)
 	redissmap:=map[string]map[string]interface{}{}
 	for redisid,redisname:=range redisslist{
 		redissmap[redisname]=map[string]interface{}{"id":redisid}
 	}
+	fmt.Println(redissmap)
 	if len(redisinfos)>0{
-		for _,redisname:=range redisslist{
-			fmt.Println(redisname)
+		for _,redisinfo:=range redisinfos{
+			rediss=append(rediss,map[string]interface{}{"id":redisinfo.id})
 		}
 	}
+	fmt.Println(rediss)
 	return rediss
 }
 
