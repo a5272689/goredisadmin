@@ -9,7 +9,6 @@ import (
 	"github.com/flosch/pongo2"
 	"goredisadmin/models"
 	//"goredisadmin/utils"
-	"time"
 	"strconv"
 )
 
@@ -49,17 +48,28 @@ type bootstrapTableSentinelsData struct {
 
 type sentinelsData struct {
 	Id int `json:"id"`
-	Sentinel_cluster_name string `json:"sentinel_cluster_name"`
+	//Sentinel_cluster_name string `json:"sentinel_cluster_name"`
 	Hostname string `json:"hostname"`
 	Port int `json:"port"`
 	Masters []string `json:"masters"`
+	ConnectionStatus bool `json:"connection_status"`
+	MasterRediss map[string][]map[string]string `json:"master_rediss"`
+	
 }
 
 func SentinelsDataAPI(w http.ResponseWriter, r *http.Request) {
 	alldata:=new(bootstrapTableSentinelsData)
 	alldata.Rows=[]sentinelsData{}
-	for i:=0;i<100;i++{
-		alldata.Rows=append(alldata.Rows,sentinelsData{Id:i,Sentinel_cluster_name:"TEST",Hostname:"test2",Port:123,Masters:[]string{}})
+	//for i:=0;i<100;i++{
+	//	alldata.Rows=append(alldata.Rows,sentinelsData{Id:i,Sentinel_cluster_name:"TEST",Hostname:"test2",Port:123,Masters:[]string{}})
+	//}
+
+	for _,sentinel:=range models.GetSentinels(){
+		alldata.Rows=append(alldata.Rows,sentinelsData{Id:sentinel["id"].(int),
+			//Sentinel_cluster_name:sentinel["sentinel_cluster_name"].(string),
+			Hostname:sentinel["hostname"].(string),Port:sentinel["port"].(int),Masters:sentinel["masters"].([]string),
+			ConnectionStatus:sentinel["connection_status"].(bool),MasterRediss:sentinel["master_rediss"].(map[string][]map[string]string),
+		})
 	}
 	alldata.Total=len(alldata.Rows)
 	jsonresult,_:=json.Marshal(alldata)
@@ -69,34 +79,14 @@ func SentinelsDataAPI(w http.ResponseWriter, r *http.Request) {
 func SentinelsDataChangeAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type","application/json")
 	r.ParseForm()
-	fmt.Println(r.PostForm)
 	result:=new(JsonResult)
 	sentinelid:=r.PostForm.Get("sentinelid")
-	sentinel_cluster_name:=r.PostForm.Get("sentinel_cluster_name")
 	hostname:=r.PostForm.Get("hostname")
 	port,_:=strconv.Atoi(r.PostForm.Get("port"))
-	if sentinelid==""{
-		fmt.Println(sentinel_cluster_name,hostname,port)
-		_,err:=models.Redis.Lpush("goredisadmin:sentinels",strconv.Itoa(int(time.Now().UnixNano())))
-		if err!=nil{
-			result.Info=fmt.Sprintf("添加到list失败！！！错误信息：%v",err)
-		}else {
-			result.Result=true
-		}
-	}else {
-		sentinelid,err:=strconv.Atoi(sentinelid)
-		if err!=nil{
-			result.Info=fmt.Sprintf("sentinelid非整数！！！错误信息：%v",err)
-		}else {
-			sentinel_name,err:=models.Redis.Lindex("goredisadmin:sentinels",sentinelid)
-			if err!=nil{
-				result.Info=fmt.Sprintf("从list过去sentinel_name失败！！！错误信息：%v",err)
-			}else {
-				result.Result=true
-			}
-			fmt.Println(sentinel_name)
-		}
-	}
+	sentinel:=&models.Sentinel{HostName:hostname,Port:port,Sentinelid:sentinelid}
+	saveresult,err:=sentinel.Save()
+	result.Result=saveresult
+	result.Info=fmt.Sprintf("报错：%v",err)
 	jsonresult,_:=json.Marshal(result)
 	fmt.Fprint(w,string(jsonresult))
 }

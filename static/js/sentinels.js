@@ -44,11 +44,6 @@ function tableinit() {
             align:'center',
             valign: 'middle'
         }, {
-            field: 'sentinel_cluster_name',
-            title: '集群名称',
-            align:'center',
-            valign: 'middle'
-        }, {
             field: 'hostname',
             title: '主机名(IP)',
             align:'center',
@@ -59,10 +54,31 @@ function tableinit() {
             align:'center',
             valign: 'middle'
         }, {
-            field: 'masters',
             title: 'masters',
             align:'center',
-            valign: 'middle'
+            valign: 'middle',
+            formatter:function (value,row,index) {
+                var change='';
+                for (var i in row['masters']){
+                    // change+='<button type="button" class="btn btn-default btn-sm" onclick="delsentinel('+row['masters'][i]+')">'+row["masters"][i]+'</button>';
+                    change+='<span class="label label-primary" onclick="lookredis(\''+row['masters'][i]+'\','+row['id']+')">'+row["masters"][i]+'</span>'
+                }
+                return change
+            }
+        }, {
+            title: '连接状态',
+            align:'center',
+            valign: 'middle',
+            formatter:function (value,row,index) {
+                var change;
+                if ( row["connection_status"]){
+                    // change+='<button type="button" class="btn btn-default btn-sm" onclick="delsentinel('+row['masters'][i]+')">'+row["masters"][i]+'</button>';
+                    change='<span class="label label-success">ON</span>'
+                }else {
+                    change='<span class="label label-danger">OFF</span>'
+                }
+                return change
+            }
         }, {title:'操作',
                 align:'center',
                 valign: 'middle',
@@ -102,14 +118,13 @@ $('#sentinelssavebutton').click(function () {
     var sentinelid=$.trim($('#sentinelid_form').val()),
         hostname=$.trim($('#hostname_form').val()),
         port=Number($.trim($('#port_form').val())),
-        sentinel_cluster_name=$.trim($('#sentinel_cluster_name_form').val()),
-        senddata={"port":port,"sentinel_cluster_name":sentinel_cluster_name,"hostname":hostname};
+        senddata={"port":port,"hostname":hostname};
     var $forminfo=$('#forminfo');
     if (sentinelid!=""){
         senddata["sentinelid"]=Number(sentinelid)
     }
 
-    if (port==0||sentinel_cluster_name==""||hostname==""){
+    if (port==0||hostname==""){
         $forminfo.text("所有字段不能为空!!!");
         $forminfo.show();
         return
@@ -159,9 +174,13 @@ function forminit(data) {
         $('#sentinelid_form').val(data.id);
         $('#hostname_form').val(data.hostname);
         $('#port_form').val(data.port);
-        $('#sentinel_cluster_name_form').val(data.sentinel_cluster_name);
     }else {
         $('#sentinelid_form').val("");
     }
     $('#forminfo').hide()
+}
+
+function lookredis(mastername,id) {
+    console.log(mastername,id);
+    console.log($('#sentinelstable').bootstrapTable('getRowByUniqueId', id));
 }

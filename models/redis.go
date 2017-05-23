@@ -5,9 +5,19 @@ import (
 	"fmt"
 	"errors"
 	"goredisadmin/utils"
+	"strconv"
 )
 
 func NewRedis(host string,port int,passwd string) (client *redis.Client,err error,conn,auth,ping bool)  {
+	portstr:=strconv.Itoa(port)
+	client=RedisMap[host+portstr]
+	if client!=nil{
+		result,err:=client.Ping()
+		if result=="PONG"{
+			return client,err,true,true,true
+		}
+	}
+
 	client, err = redis.Dial("tcp", fmt.Sprintf("%v:%v",host,port))
 	if err!=nil{
 		return client,err,conn,auth,ping
@@ -27,16 +37,19 @@ func NewRedis(host string,port int,passwd string) (client *redis.Client,err erro
 		return client,err,conn,auth,ping
 	}
 	ping=true
+	RedisMap[host+portstr]=client
 	return client,err,conn,auth,ping
 }
 
 var Redis,_,_,_,_=NewRedis(utils.Rc.Host,utils.Rc.Port,utils.Rc.Passwd)
 
+var RedisMap=map[string]*redis.Client{}
+
 func CheckredisResult(result string,err error) (error) {
 	if err!=nil{
 		return err
 	}
-	if result!="ok"{
+	if result!="OK"{
 		return errors.New(result)
 	}
 	return nil
