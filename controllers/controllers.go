@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"io/ioutil"
+	"goredisadmin/utils"
 )
 
 func initconText(r *http.Request) pongo2.Context {
@@ -78,16 +79,37 @@ func SentinelsDataChangeAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type","application/json")
 	r.ParseForm()
 	result:=new(JsonResult)
-	sentinelid:=r.PostForm.Get("sentinelid")
 	hostname:=r.PostForm.Get("hostname")
 	port,_:=strconv.Atoi(r.PostForm.Get("port"))
-	sentinel:=&models.Sentinel{HostName:hostname,Port:port,Sentinelid:sentinelid}
-	saveresult,err:=sentinel.Save()
+	utils.Logger.Printf("[info] SentinelsDataChangeAPI 收到参数：hostname:%v,port:%v",hostname,port)
+	sentinel:=&models.Sentinel{Hostname:hostname,Port:port}
+	saveresult,err:=sentinel.Create()
 	result.Result=saveresult
 	result.Info=fmt.Sprintf("报错：%v",err)
 	jsonresult,_:=json.Marshal(result)
+	strjsonresult:=string(jsonresult)
+	utils.Logger.Printf("[info] SentinelsDataChangeAPI 结果：%v",strjsonresult)
+	fmt.Fprint(w,strjsonresult)
+}
+
+func SentinelsDataDelAPI(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type","application/json")
+	result:=new(JsonResult)
+	result.Result=true
+	data, _ := ioutil.ReadAll(r.Body)
+	utils.Logger.Println("[info] SentinelsDataDelAPI 收到json串：",string(data))
+	defer r.Body.Close()
+	var del_sentinels []models.Sentinel
+	json.Unmarshal(data,&del_sentinels)
+	for _,tmp_sentinel_c:=range del_sentinels{
+		tmp_del_result,_:=tmp_sentinel_c.Del()
+		utils.Logger.Println("[info] SentinelsDataDelAPI 删除：",tmp_sentinel_c," 结果：",tmp_del_result)
+	}
+	jsonresult,_:=json.Marshal(result)
 	fmt.Fprint(w,string(jsonresult))
 }
+
+
 
 func Rediss(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)

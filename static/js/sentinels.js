@@ -60,7 +60,6 @@ function tableinit() {
             formatter:function (value,row,index) {
                 var change;
                 if ( row["connection_status"]){
-                    // change+='<button type="button" class="btn btn-default btn-sm" onclick="delsentinel('+row['masters'][i]+')">'+row["masters"][i]+'</button>';
                     change='<span class="label label-success">ON</span>'
                 }else {
                     change='<span class="label label-danger">OFF</span>'
@@ -71,28 +70,24 @@ function tableinit() {
                 align:'center',
                 valign: 'middle',
                 formatter:function (value,row,index) {
-                    var change='<button type="button" class="btn btn-primary btn-xs" onclick="writesentinel('+row['id']+')">编辑</button>';
-                    change+='<button type="button" class="btn btn-danger btn-xs" onclick="delsentinel('+row['id']+')">删除</button>';
+                    var change='<button type="button" class="btn btn-danger btn-xs" onclick="delsentinel('+row['id']+')">删除</button>';
                     return change
                 }
             }
         ],
         responseHandler:function(res) {
+            console.log(res.rows);
             return res.rows;
         }
     }
 }
 
 $('#sentinelssavebutton').click(function () {
-    var sentinelid=$.trim($('#sentinelid_form').val()),
-        hostname=$.trim($('#hostname_form').val()),
+    var hostname=$.trim($('#hostname_form').val()),
         port=Number($.trim($('#port_form').val())),
         senddata={"port":port,"hostname":hostname};
     var $forminfo=$('#forminfo');
-    if (sentinelid!=""){
-        senddata["sentinelid"]=Number(sentinelid)
-    }
-
+    var del_sentinels=[];
     if (port==0||hostname==""){
         $forminfo.text("所有字段不能为空!!!");
         $forminfo.show();
@@ -103,7 +98,7 @@ $('#sentinelssavebutton').click(function () {
         type: "post",
         data:senddata,
         traditional:true,
-        dataType:"json",
+        // dataType:"json",
         success:function (res) {
             if (res.result){
                 tablerowshow();
@@ -131,21 +126,7 @@ $('#newsentinel').click(function () {
     $('#formrow').show();
 });
 
-function writesentinel(id) {
-    var rowdata=$('#sentinelstable').bootstrapTable('getRowByUniqueId',id);
-    forminit(rowdata);
-    $('#tablerow').hide();
-    $('#formrow').show();
-}
-
 function forminit(data) {
-    if (data!=null){
-        $('#sentinelid_form').val(data.id);
-        $('#hostname_form').val(data.hostname);
-        $('#port_form').val(data.port);
-    }else {
-        $('#sentinelid_form').val("");
-    }
     $('#forminfo').hide()
 }
 
@@ -161,6 +142,42 @@ function lookredis(mastername,id) {
 
 
 function tablerowshow() {
-    $('#sentinelstable').bootstrapTable("load",tableinit());
+    $('#sentinelstable').bootstrapTable("refresh",{});
     $('#tablerow').show();
 }
+
+function delsentinel(id) {
+    var info=$('#sentinelstable').bootstrapTable('getRowByUniqueId', id);
+    var senddata=[{"hostname":info.hostname,"port":info.port}];
+    $.ajax({
+        url:"/sentinelsdel",
+        type: "post",
+        data:JSON.stringify(senddata),
+        // traditional:true,
+        contentType: "application/json",
+        dataType:'json',
+        success:function (res) {
+            $('#sentinelstable').bootstrapTable("refresh",{});
+        },
+    });
+}
+
+$('#delselectsentinels').click(function () {
+        var infos=$('#sentinelstable').bootstrapTable('getAllSelections');
+        var senddata=[];
+        for (var i in infos){
+            senddata.push({"hostname":infos[i].hostname,"port":infos[i].port})
+        }
+        $.ajax({
+            url:"/sentinelsdel",
+            type: "post",
+            data:JSON.stringify(senddata),
+            // traditional:true,
+            contentType: "application/json",
+            dataType:'json',
+            success:function (res) {
+                $('#sentinelstable').bootstrapTable("refresh",{});
+            },
+        });
+}
+);
