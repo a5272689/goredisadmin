@@ -87,7 +87,6 @@ $('#sentinelssavebutton').click(function () {
         port=Number($.trim($('#port_form').val())),
         senddata={"port":port,"hostname":hostname};
     var $forminfo=$('#forminfo');
-    var del_sentinels=[];
     if (port==0||hostname==""){
         $forminfo.text("所有字段不能为空!!!");
         $forminfo.show();
