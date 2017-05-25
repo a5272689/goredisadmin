@@ -133,7 +133,10 @@ type redissData struct {
 	Hostname string `json:"hostname"`
 	Port int `json:"port"`
 	ConnectionStatus bool `json:"connection_status"`
+	AuthStatus bool `json:"auth_status"`
+	PingStatus bool `json:"ping_status"`
 	Version string `json:"version"`
+	Role string `json:"role"`
 }
 
 func RedissDataAPI(w http.ResponseWriter, r *http.Request) {
@@ -151,22 +154,59 @@ func RedissDataAPI(w http.ResponseWriter, r *http.Request) {
 			if err!=nil{
 				continue
 			}
-			redisinfoslist=append(redisinfoslist,models.RedisInfo{HostName:redislist[0],Port:redisport})
+			redisinfoslist=append(redisinfoslist,models.RedisInfo{Hostname:redislist[0],Port:redisport})
 		}
 	}
 	alldata:=new(bootstrapTableRedissData)
 	alldata.Rows=[]redissData{}
-	models.GetRediss(redisinfoslist...)
-	//for _,_:=range models.GetRediss(){
-	//	alldata.Rows=append(alldata.Rows,redissData{Id:sentinel["id"].(int),Version:sentinel["version"].(string),
-	//		Hostname:sentinel["hostname"].(string),Port:sentinel["port"].(int),Masters:sentinel["masters"].([]string),
-	//		ConnectionStatus:sentinel["connection_status"].(bool),MasterRediss:sentinel["master_rediss"].(map[string][]map[string]string),
-	//	})
-	//}
+
+	for _,redisinfo:=range models.GetRediss(redisinfoslist...){
+		alldata.Rows=append(alldata.Rows,redissData{Id:redisinfo["id"].(int),Version:redisinfo["version"].(string),
+			Hostname:redisinfo["hostname"].(string),Port:redisinfo["port"].(int),AuthStatus:redisinfo["auth_status"].(bool),
+			ConnectionStatus:redisinfo["connection_status"].(bool),PingStatus:redisinfo["ping_status"].(bool),
+			Role:redisinfo["role"].(string),
+		})
+	}
 	alldata.Total=len(alldata.Rows)
 	jsonresult,_:=json.Marshal(alldata)
 	fmt.Fprint(w,string(jsonresult))
 }
+
+func RedissDataChangeAPI(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type","application/json")
+	r.ParseForm()
+	result:=new(JsonResult)
+	hostname:=r.PostForm.Get("hostname")
+	port,_:=strconv.Atoi(r.PostForm.Get("port"))
+	password:=r.PostForm.Get("password")
+	utils.Logger.Printf("[info] RedissDataChangeAPI 收到参数：hostname:%v,port:%v,password:%v",hostname,port,password)
+	redis:=&models.RedisInfo{Hostname:hostname,Port:port,Password:password}
+	saveresult,err:=redis.Save()
+	result.Result=saveresult
+	result.Info=fmt.Sprintf("报错：%v",err)
+	jsonresult,_:=json.Marshal(result)
+	strjsonresult:=string(jsonresult)
+	utils.Logger.Printf("[info] RedissDataChangeAPI 结果：%v",strjsonresult)
+	fmt.Fprint(w,strjsonresult)
+}
+
+func RedissDataDelAPI(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type","application/json")
+	result:=new(JsonResult)
+	result.Result=true
+	data, _ := ioutil.ReadAll(r.Body)
+	utils.Logger.Println("[info] reddissDataDelAPI 收到json串：",string(data))
+	defer r.Body.Close()
+	var del_rediss []models.RedisInfo
+	json.Unmarshal(data,&del_rediss)
+	for _,tmp_redis_c:=range del_rediss{
+		tmp_del_result,_:=tmp_redis_c.Del()
+		utils.Logger.Println("[info] reddissDataDelAPI 删除：",tmp_redis_c," 结果：",tmp_del_result)
+	}
+	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
+
 
 func Logout(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)

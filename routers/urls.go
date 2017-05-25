@@ -15,6 +15,8 @@ func Urls() *mux.Router  {
 	r.HandleFunc("/sentinelsdel", controllers.SentinelsDataDelAPI)
 	r.HandleFunc("/rediss", controllers.Rediss)
 	r.HandleFunc("/redissdata", controllers.RedissDataAPI)
+	r.HandleFunc("/redisschange", controllers.RedissDataChangeAPI)
+	r.HandleFunc("/redissdel", controllers.RedissDataDelAPI)
 	r.HandleFunc("/logout", controllers.Logout)
 	r.HandleFunc("/login",controllers.Login)
 	r.HandleFunc("/loginauth",controllers.LoginAuth)

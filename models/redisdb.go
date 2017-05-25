@@ -1,13 +1,11 @@
 package models
 
 import (
-
-)
-import (
 	"crypto/md5"
 	"strconv"
 	"fmt"
-	"errors"
+	"encoding/json"
+	"goredisadmin/utils"
 )
 
 func  GetHashName(hostname string,port int) (string) {
@@ -19,74 +17,78 @@ func  GetHashName(hostname string,port int) (string) {
 }
 
 type RedisInfo struct {
-	Id string
-	HostName string
-	Port int
-	PassWord string
-	//Sentinel_cluster_name string
-	HashName string
-	//Masters []string
-	//ConnectionStatus
+	Hostname string `json:"hostname"`
+	Port int `json:"port"`
+	Password string `json:"password"`
+	Hashname string `json:"hashname"`
 }
 
 func GetRediss(redisinfos ...RedisInfo) []map[string]interface{} {
 	rediss:=[]map[string]interface{}{}
-	llen,err:=Redis.Llen("goredisadmin:rediss:list")
-	if err!=nil{
-		return rediss
+	newredisinfos:=[]RedisInfo{}
+	if len(redisinfos)>0{
+		for _,redisinfo:=range redisinfos{
+			redisinfo.Hashname=GetHashName(redisinfo.Hostname,redisinfo.Port)
+			exists,_:=Redis.Hexists("goredisadmin:rediss:hash",redisinfo.Hashname)
+			if !exists {
+				redisinfo.Save()
+			}else {
+				redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",redisinfo.Hashname)
+				json.Unmarshal([]byte(redisinfostr),redisinfo)
+			}
+			newredisinfos=append(newredisinfos,redisinfo)
+		}
+	}else {
+		utils.Logger.Println("获取所有redis")
+		redisslist,err:=Redis.Hkeys("goredisadmin:rediss:hash")
+		if err!=nil{
+			return rediss
+		}
+		for _,tmphashname:=range redisslist{
+			redisinfo:=&RedisInfo{}
+			redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",tmphashname)
+			json.Unmarshal([]byte(redisinfostr),redisinfo)
+			newredisinfos=append(newredisinfos,*redisinfo)
+		}
 	}
-	redisslist,err:=Redis.Lrange("goredisadmin:rediss:list",0,llen)
-	if err!=nil{
-		return rediss
+	for id,redisinfo:=range newredisinfos {
+		redisC, err, conn, auth, ping := NewRedis(redisinfo.Hostname, redisinfo.Port, redisinfo.Password)
+		version := ""
+		role := ""
+		if err == nil {
+			info, _ := redisC.Info()
+			version = info["redis_version"]
+			role = info["role"]
+		}
+		rediss = append(rediss, map[string]interface{}{"id": id, "hostname": redisinfo.Hostname, "port": redisinfo.Port,
+			"connection_status":                         conn, "auth_status": auth, "ping_status": ping, "version": version, "role": role})
 	}
-	fmt.Println(redisinfos)
-	redissmap:=map[string]int{}
-	for redisid,redisname:=range redisslist{
-		redissmap[redisname]=redisid
-	}
-	//if len(redisinfos)>0{
-	//	for _,redisinfo:=range redisinfos{
-	//		redisinfo.HashName=GetHashName(redisinfo.HostName,redisinfo.Port)
-	//		exists,_:=Redis.Hexists("goredisadmin:rediss:hash",redisinfo.HashName+":hostname")
-	//		if exists{
-	//			redisinfo.Id=strconv.Itoa(redissmap[redisinfo.HashName])
-	//		}else {
-	//			redisslist,err:=Redis.Lpush("goredisadmin:rediss:list",redisinfo.HashName)
-	//		}
-	//		fmt.Println(redisinfo.HashName,redissmap[redisinfo.HashName])
-	//		rediss=append(rediss,map[string]interface{}{"id":redisinfo.Id})
-	//	}
-	//}
-
-	fmt.Println(redissmap)
-	fmt.Println(rediss)
 	return rediss
 }
 
 
-func (r *RedisInfo)Save() (result bool,index int,err error) {
-	r.HashName=GetHashName(r.HostName,r.Port)
-	exists,_:=Redis.Hexists("goredisadmin:rediss:hash",r.HashName+":hostname")
-	if exists&&r.Id==""{
-		return false,0,errors.New(fmt.Sprintf("hostname:%v,port:%v 已经存在无法新建!!!",r.HostName,r.Port))
+func (r *RedisInfo)Save() (result bool,err error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	jsonstr,err:=json.Marshal(r)
+	if err!=nil{
+		return false,err
 	}
-	if r.Id==""{
-		return r.Create()
+	_,err=Redis.Hset("goredisadmin:rediss:hash",r.Hashname,string(jsonstr))
+	if err!=nil{
+		return false,err
+	}else {
+		return true,err
 	}
-	return false,0,errors.New(fmt.Sprintf("hostname:%v,port:%v 已经存在无法新建!!!",r.HostName,r.Port))
-	//return r.Update()
 }
 
-func (r *RedisInfo)Create() (result bool,index int,err error) {
-	index,err=Redis.Lpush("goredisadmin:rediss:list",r.HashName)
+
+func  (r *RedisInfo)Del() (bool,error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	_,err:=Redis.Hdel("goredisadmin:rediss:hash",r.Hashname)
 	if err!=nil{
-		return false,0,err
-	}
-	hmsetresult,err:=Redis.Hmset("goredisadmin:sentinels:hash",r.HashName+":hostname",r.HostName,r.HashName+":port",r.Port,r.HashName+":password",r.PassWord)
-	if hmsetresult!="OK"||err!=nil{
-		return false,index,err
+		return false,err
 	}else {
-		return true,index,err
+		return true,err
 	}
 }
 

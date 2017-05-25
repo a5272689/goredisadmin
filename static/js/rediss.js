@@ -45,17 +45,10 @@ function tableinit() {
             align:'center',
             valign: 'middle'
         }, {
-            title: 'masters',
+            title: '角色',
             align:'center',
             valign: 'middle',
-            formatter:function (value,row,index) {
-                var change='';
-                for (var i in row['masters']){
-                    // change+='<button type="button" class="btn btn-default btn-sm" onclick="delsentinel('+row['masters'][i]+')">'+row["masters"][i]+'</button>';
-                    change+='<span class="label label-primary" onclick="lookredis(\''+row['masters'][i]+'\','+row['id']+')">'+row["masters"][i]+'</span>'
-                }
-                return change
-            }
+            field: 'role'
         }, {
             title: '连接状态',
             align:'center',
@@ -70,12 +63,41 @@ function tableinit() {
                 }
                 return change
             }
+        }, {
+            title: '认证状态',
+            align:'center',
+            valign: 'middle',
+            formatter:function (value,row,index) {
+                var change;
+                if ( row["auth_status"]){
+                    // change+='<button type="button" class="btn btn-default btn-sm" onclick="delsentinel('+row['masters'][i]+')">'+row["masters"][i]+'</button>';
+                    change='<span class="label label-success">ON</span>'
+                }else {
+                    change='<span class="label label-danger">OFF</span>'
+                }
+                return change
+            }
+        }, {
+            title: 'PING状态',
+            align:'center',
+            valign: 'middle',
+            formatter:function (value,row,index) {
+                var change;
+                if ( row["ping_status"]){
+                    // change+='<button type="button" class="btn btn-default btn-sm" onclick="delsentinel('+row['masters'][i]+')">'+row["masters"][i]+'</button>';
+                    change='<span class="label label-success">ON</span>'
+                }else {
+                    change='<span class="label label-danger">OFF</span>'
+                }
+                return change
+            }
         }, {title:'操作',
                 align:'center',
                 valign: 'middle',
                 formatter:function (value,row,index) {
-                    var change='<button type="button" class="btn btn-primary btn-xs" onclick="writesentinel('+row['id']+')">编辑</button>';
-                    change+='<button type="button" class="btn btn-danger btn-xs" onclick="delsentinel('+row['id']+')">删除</button>';
+                    var change='<button type="button" class="btn btn-primary btn-xs" onclick="lookredis('+row['id']+')">操作</button>';
+                    change+='<button type="button" class="btn btn-warning btn-xs" onclick="writeredis('+row['id']+')">修改密码</button>';
+                    change+='<button type="button" class="btn btn-danger btn-xs" onclick="delredis('+row['id']+')">删除</button>';
                     return change
                 }
             }
@@ -86,23 +108,19 @@ function tableinit() {
     }
 }
 
-$('#sentinelssavebutton').click(function () {
-    var sentinelid=$.trim($('#sentinelid_form').val()),
-        hostname=$.trim($('#hostname_form').val()),
+$('#redisssavebutton').click(function () {
+    var hostname=$.trim($('#hostname_form').val()),
         port=Number($.trim($('#port_form').val())),
-        senddata={"port":port,"hostname":hostname};
+        password=$.trim($('#password_form').val()),
+        senddata={"port":port,"hostname":hostname,"password":password};
     var $forminfo=$('#forminfo');
-    if (sentinelid!=""){
-        senddata["sentinelid"]=Number(sentinelid)
-    }
-
     if (port==0||hostname==""){
         $forminfo.text("所有字段不能为空!!!");
         $forminfo.show();
         return
     }
     $.ajax({
-        url:"/sentinelschange",
+        url:"/redisschange",
         type: "post",
         data:senddata,
         traditional:true,
@@ -123,43 +141,79 @@ $('#sentinelssavebutton').click(function () {
     });
 });
 
-$('#sentinelscancelbutton').click(function () {
+$('#redisscancelbutton').click(function () {
     tablerowshow();
     $('#formrow').hide();
 });
 
-$('#newsentinel').click(function () {
+$('#newredis').click(function () {
     forminit();
     $('#tablerow').hide();
     $('#formrow').show();
 });
 
-function writesentinel(id) {
-    var rowdata=$('#sentinelstable').bootstrapTable('getRowByUniqueId',id);
-    forminit(rowdata);
+function writeredis(id) {
+    var rowdata=$('#redisstable').bootstrapTable('getRowByUniqueId',id);
+    $('#form_title').text("修改redis密码");
+    $('#hostname_form_row').hide();
+    $('#hostname_form').val(rowdata.hostname);
+    $('#port_form_row').hide();
+    $('#port_form').val(rowdata.port);
+    $('#forminfo').hide();
     $('#tablerow').hide();
     $('#formrow').show();
 }
 
 function forminit(data) {
-    if (data!=null){
-        $('#sentinelid_form').val(data.id);
-        $('#hostname_form').val(data.hostname);
-        $('#port_form').val(data.port);
-    }else {
-        $('#sentinelid_form').val("");
-    }
+    $('#form_title').text("新建redis");
+    $('#hostname_form_row').show();
+    $('#port_form_row').show();
     $('#forminfo').hide()
 }
 
 function lookredis(id) {
-    var masterdata=$('#sentinelstable').bootstrapTable('getRowByUniqueId', id);
+    var redisdata=$('#redisstable').bootstrapTable('getRowByUniqueId', id);
+    console.log(redisdata)
 }
 
 
 function tablerowshow() {
-    $('#sentinelstable').bootstrapTable("refresh",{});
+    $('#redisstable').bootstrapTable("refresh",{});
     $('#tablerow').show();
 }
 
+function delredis(id) {
+    var info=$('#redisstable').bootstrapTable('getRowByUniqueId', id);
+    var senddata=[{"hostname":info.hostname,"port":info.port}];
+    $.ajax({
+        url:"/redissdel",
+        type: "post",
+        data:JSON.stringify(senddata),
+        // traditional:true,
+        contentType: "application/json",
+        dataType:'json',
+        success:function (res) {
+            $('#redisstable').bootstrapTable("refresh",{});
+        },
+    });
+}
 
+$('#delselectrediss').click(function () {
+        var infos=$('#redisstable').bootstrapTable('getAllSelections');
+        var senddata=[];
+        for (var i in infos){
+            senddata.push({"hostname":infos[i].hostname,"port":infos[i].port})
+        }
+        $.ajax({
+            url:"/redissdel",
+            type: "post",
+            data:JSON.stringify(senddata),
+            // traditional:true,
+            contentType: "application/json",
+            dataType:'json',
+            success:function (res) {
+                $('#redisstable').bootstrapTable("refresh",{});
+            },
+        });
+    }
+);

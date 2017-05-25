@@ -20,20 +20,24 @@ func NewRedis(host string,port int,passwd string) (client *redis.Client,err erro
 
 	client, err = redis.Dial("tcp", fmt.Sprintf("%v:%v",host,port))
 	if err!=nil{
+		utils.Logger.Printf("redis %v:%v 连接失败！！！",host,port)
 		return client,err,conn,auth,ping
 	}
 	conn=true
 	if passwd!=""{
 		result,_:=client.Auth(passwd)
 		if result!="OK"{
-			utils.Logger.Println("redis %v:%v 认证失败！！！",host,port)
+			utils.Logger.Printf("redis %v:%v 认证失败！！！",host,port)
 			return client,err,conn,auth,ping
 		}
 	}
 	auth=true
 	result,err:=client.Ping()
 	if result!="PONG"{
-		utils.Logger.Println("redis %v:%v 连接失败！！！，ping结果：%v",host,port,result)
+		utils.Logger.Printf("redis %v:%v ping失败！！！",host,port)
+		if passwd==""{
+			auth=false
+		}
 		return client,err,conn,auth,ping
 	}
 	ping=true
