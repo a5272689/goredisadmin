@@ -186,10 +186,11 @@ func Keys(w http.ResponseWriter, r *http.Request) {
 	}else {
 		redis_list=models.GetRedisNames()
 	}
+	dbs_json, _ := json.Marshal(models.GetRedisDbs(redis_list))
 	tpl,err:=pongo2.FromFile("views/contents/keys.html")
 	tpl = pongo2.Must(tpl,err)
 	context:=initconText(r)
-	context=context.Update(pongo2.Context{"rediss":redis_list})
+	context=context.Update(pongo2.Context{"rediss":redis_list,"db_map":string(dbs_json)})
 	tpl.ExecuteWriter(context, w)
 }
 
@@ -203,14 +204,17 @@ type bootstrapTableKeysData struct {
 func KeysDataAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
+	utils.Logger.Println(string(data))
 	jsonob,_:=simplejson.NewJson(data)
 	keysstr,_:=jsonob.Get("keys").String()
 	redisstr,_:=jsonob.Get("redis").String()
+	redis_db,_:=jsonob.Get("redis_db").String()
+	redis_db_index,_:=strconv.Atoi(redis_db)
 	redislist:=strings.Split(redisstr,":")
 	redisport,_:=strconv.Atoi(redislist[1])
 	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
 	alldata:=new(bootstrapTableKeysData)
-	alldata.Rows=redisinfo.GetKeys(keysstr)
+	alldata.Rows=redisinfo.GetKeys(keysstr,redis_db_index)
 	alldata.Total=len(alldata.Rows)
 	jsonresult,_:=json.Marshal(alldata)
 	fmt.Fprint(w,string(jsonresult))
@@ -219,6 +223,7 @@ func KeysDataAPI(w http.ResponseWriter, r *http.Request) {
 func KeysDataDelAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
+	utils.Logger.Println(string(data))
 	jsonob,_:=simplejson.NewJson(data)
 	tmpkeyslist,_:=jsonob.Get("keys").Array()
 	keyslist:=[]string{}
@@ -228,8 +233,10 @@ func KeysDataDelAPI(w http.ResponseWriter, r *http.Request) {
 	redisstr,_:=jsonob.Get("redis").String()
 	redislist:=strings.Split(redisstr,":")
 	redisport,_:=strconv.Atoi(redislist[1])
+	redis_db,_:=jsonob.Get("redis_db").String()
+	redis_db_index,_:=strconv.Atoi(redis_db)
 	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
-	del_keys:=redisinfo.DelKeys(keyslist)
+	del_keys:=redisinfo.DelKeys(keyslist,redis_db_index)
 	result:=new(JsonResult)
 	result.Result=true
 	result.Info=strings.Join(del_keys,",")
@@ -240,6 +247,7 @@ func KeysDataDelAPI(w http.ResponseWriter, r *http.Request) {
 func KeysDataExpireAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
+	utils.Logger.Println(string(data))
 	jsonob,_:=simplejson.NewJson(data)
 	tmpkeyslist,_:=jsonob.Get("keys").Array()
 	keyslist:=[]string{}
@@ -250,8 +258,10 @@ func KeysDataExpireAPI(w http.ResponseWriter, r *http.Request) {
 	seconds,_:=jsonob.Get("seconds").Int()
 	redislist:=strings.Split(redisstr,":")
 	redisport,_:=strconv.Atoi(redislist[1])
+	redis_db,_:=jsonob.Get("redis_db").String()
+	redis_db_index,_:=strconv.Atoi(redis_db)
 	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
-	del_keys:=redisinfo.ExpireKeys(keyslist,seconds)
+	del_keys:=redisinfo.ExpireKeys(keyslist,seconds,redis_db_index)
 	result:=new(JsonResult)
 	result.Result=true
 	result.Info=strings.Join(del_keys,",")
@@ -262,6 +272,7 @@ func KeysDataExpireAPI(w http.ResponseWriter, r *http.Request) {
 func KeysDataPersistAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
+	utils.Logger.Println(string(data))
 	jsonob,_:=simplejson.NewJson(data)
 	tmpkeyslist,_:=jsonob.Get("keys").Array()
 	keyslist:=[]string{}
@@ -271,8 +282,10 @@ func KeysDataPersistAPI(w http.ResponseWriter, r *http.Request) {
 	redisstr,_:=jsonob.Get("redis").String()
 	redislist:=strings.Split(redisstr,":")
 	redisport,_:=strconv.Atoi(redislist[1])
+	redis_db,_:=jsonob.Get("redis_db").String()
+	redis_db_index,_:=strconv.Atoi(redis_db)
 	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
-	del_keys:=redisinfo.PersistKeys(keyslist)
+	del_keys:=redisinfo.PersistKeys(keyslist,redis_db_index)
 	result:=new(JsonResult)
 	result.Result=true
 	result.Info=strings.Join(del_keys,",")

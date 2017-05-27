@@ -24,6 +24,7 @@ func  (s *Sentinel)GetHashName() (string) {
 
 
 func  (s *Sentinel)Create() (bool,error) {
+	Redis.Select(0)
 	s.GetHashName()
 	jsonstr,err:=json.Marshal(s)
 	if err!=nil{
@@ -38,6 +39,7 @@ func  (s *Sentinel)Create() (bool,error) {
 }
 
 func  (s *Sentinel)Del() (bool,error) {
+	Redis.Select(0)
 	s.GetHashName()
 	_,err:=Redis.Hdel("goredisadmin:sentinels:hash",s.Hashname)
 	if err!=nil{
@@ -59,7 +61,7 @@ type SentinelsData struct {
 }
 
 func GetSentinels() []SentinelsData{
-
+	Redis.Select(0)
 	sentinels:=[]SentinelsData{}
 	sentinelslist,err:=Redis.Hkeys("goredisadmin:sentinels:hash")
 	if err!=nil{

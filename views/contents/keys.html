@@ -13,11 +13,21 @@
             <div class="panel">
                 <div class="panel-body">
                     <div class="row" style="margin-bottom: 5px;padding-bottom: 5px">
-                        <select class="form-control" id="redis_select">
-                            {% for redis in rediss %}
-                            <option value="{{redis}}">{{redis}}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="col-md-7" style="margin-left: -15px">
+                            <select class="form-control" id="redis_select">
+                                {% for redis in rediss %}
+                                <option value="{{redis}}">{{redis}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="input-group">
+                                <span class="input-group-addon">db</span>
+                                <select class="form-control" id="redis_db_select">
+                                </select>
+                            </div>
+                            <p style="display: none" id="db_map">{{db_map}}</p>
+                        </div>
                     </div>
                     <div class="row" style="margin-bottom: 5px;padding-bottom: 5px">
                         <div class="input-group">

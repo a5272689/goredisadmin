@@ -1,7 +1,7 @@
 /**
  * Created by root on 5/18/17.
  */
-
+redis_db_select();
 $('#keystable').bootstrapTable(tableinit());
 
 function tableinit() {
@@ -19,6 +19,7 @@ function tableinit() {
         queryParams:function(params) {
             params["redis"]=$('#redis_select').val();
             params["keys"]=$('#keys_form').val();
+            params["redis_db"]=$('#redis_db_select').val();
             return params;
         },
         method:'post',
@@ -53,7 +54,7 @@ $('#keysdelbutton').click(function(event){
     for (var i in selectkeys){
         delkeys.push(selectkeys[i]["key"])
     }
-    var senddata={"keys":delkeys,"redis":$('#redis_select').val()};
+    var senddata={"keys":delkeys,"redis":$('#redis_select').val(),"redis_db":$('#redis_db_select').val()};
     $.ajax({
         url:"/keysdel",
         type: "post",
@@ -73,7 +74,7 @@ $('#keyssetttlbutton').click(function(event){
     for (var i in selectkeys){
         delkeys.push(selectkeys[i]["key"])
     }
-    var senddata={"keys":delkeys,"redis":$('#redis_select').val(),"seconds":Number($.trim($('#ttlseconds').val()))};
+    var senddata={"keys":delkeys,"redis":$('#redis_select').val(),"redis_db":$('#redis_db_select').val(),"seconds":Number($.trim($('#ttlseconds').val()))};
     $.ajax({
         url:"/keysexpire",
         type: "post",
@@ -94,7 +95,7 @@ $('#keysPersistbutton').click(function(event){
     for (var i in selectkeys){
         delkeys.push(selectkeys[i]["key"])
     }
-    var senddata={"keys":delkeys,"redis":$('#redis_select').val()};
+    var senddata={"keys":delkeys,"redis":$('#redis_select').val(),"redis_db":$('#redis_db_select').val()};
     $.ajax({
         url:"/keyspersist",
         type: "post",
@@ -107,6 +108,21 @@ $('#keysPersistbutton').click(function(event){
         }
     });
 });
+
+$('#redis_select').change(function () {
+    redis_db_select()
+});
+
+function redis_db_select() {
+    var redis_name=$('#redis_select').val();
+    var db_map=JSON.parse($('#db_map').text());
+    var redis_db_select=$('#redis_db_select');
+    redis_db_select.empty();
+    for (var i in db_map[redis_name]){
+        redis_db_select.append('<option value="'+db_map[redis_name][i]+'">'+db_map[redis_name][i]+'</option>')
+    }
+}
+
 
 // $('#redisssavebutton').click(function () {
 //     var hostname=$.trim($('#hostname_form').val()),
