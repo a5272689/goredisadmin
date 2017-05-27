@@ -1,0 +1,120 @@
+{% extends "../layout.html" %}
+
+{% block newcss %}
+<link rel="stylesheet" href="/static/css/bootstrap-table.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h3 class="page-title">Keys</h3>
+    <p style="display: none" id="hiddenpostdata">{{ redissstr }}</p>
+    <div class="row" id="tablerow">
+        <div class="col-md-5">
+            <div class="panel">
+                <div class="panel-body">
+                    <div class="row" style="margin-bottom: 5px;padding-bottom: 5px">
+                        <select class="form-control" id="redis_select">
+                            {% for redis in rediss %}
+                            <option value="{{redis}}">{{redis}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row" style="margin-bottom: 5px;padding-bottom: 5px">
+                        <div class="input-group">
+                            <span class="input-group-addon">keys</span>
+                            <input type="text" id="keys_form" class="form-control" placeholder="*">
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 5px;padding-bottom: 5px;margin-top: 15px;padding-top: 10px;border-top: double;border-bottom-color: #0a628f">
+                        <div class="col-md-2" style="margin-left: -15px">
+                            <button type="button" class="btn btn-danger" id="keysdelbutton">删除</button>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-success" id="keysPersistbutton">设为永久</button>
+                        </div>
+                        <div class="col-md-8" style="margin-left: 15px">
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="ttlseconds">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-default" type="button" id="keyssetttlbutton">设置过期</button>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-top: 5px">
+                        <table id="keystable"></table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="panel">
+                <div class="panel-body">
+                    <div class="row">
+                    </div>
+                    <div class="row">
+                    </div>
+                    <table id="redisstable"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--<div class="row" id="formrow" style="display: none">-->
+        <!--<div class="col-md-4">-->
+            <!--&lt;!&ndash;表单&ndash;&gt;-->
+            <!--<div class="panel">-->
+                <!--<div class="panel-heading">-->
+                    <!--<h3 class="panel-title" id="form_title">新建</h3>-->
+                <!--</div>-->
+
+                <!--<div class="panel-body">-->
+                    <!--<input type="hidden" id="sentinelid_form">-->
+                    <!--<div class="row" id="hostname_form_row">-->
+                        <!--<div class="form-group">-->
+                            <!--<label for="hostname_form" class="col-sm-3 control-label">主机名(IP)</label>-->
+                            <!--<div class="col-sm-8">-->
+                                <!--<input type="text" id="hostname_form" class="form-control" placeholder="0.0.0.0">-->
+                            <!--</div>-->
+                        <!--</div>-->
+                    <!--</div>-->
+                    <!--<br>-->
+                    <!--<div class="row" id="port_form_row">-->
+                        <!--<div class="form-group">-->
+                            <!--<label for="port_form" class="col-sm-3 control-label">端口</label>-->
+                            <!--<div class="col-sm-8">-->
+                                <!--<input type="text" id="port_form" class="form-control" placeholder="0">-->
+                            <!--</div>-->
+                        <!--</div>-->
+                    <!--</div>-->
+                    <!--<br>-->
+                    <!--<div class="row">-->
+                        <!--<div class="form-group">-->
+                            <!--<label for="port_form" class="col-sm-3 control-label">密码</label>-->
+                            <!--<div class="col-sm-8">-->
+                                <!--<input type="password" id="password_form" class="form-control" placeholder="******">-->
+                            <!--</div>-->
+                        <!--</div>-->
+                    <!--</div>-->
+                    <!--<br>-->
+                    <!--<p style="color: #be2924" id="forminfo"></p>-->
+                    <!--<div class="row">-->
+                        <!--<div class="btn-group" style="float: right">-->
+                            <!--<button type="button" class="btn btn-primary" id="redisssavebutton">保存</button>-->
+                            <!--<button type="button" class="btn btn-default" id="redisscancelbutton">取消</button>-->
+                        <!--</div>-->
+                    <!--</div>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+    <!--</div>-->
+
+</div>
+
+{% endblock %}
+{% block newjs %}
+<script src="/static/js/bootstrap-table.js"></script>
+<script src="/static/js/bootstrap-table-zh-CN.js"></script>
+<script src="/static/js/keys.js"></script>
+{% endblock %}

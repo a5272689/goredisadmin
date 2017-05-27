@@ -47,9 +47,20 @@ func  (s *Sentinel)Del() (bool,error) {
 	}
 }
 
-func GetSentinels() []map[string]interface{} {
+type SentinelsData struct {
+	Id int `json:"id"`
+	Hostname string `json:"hostname"`
+	Port int `json:"port"`
+	Masters []string `json:"masters"`
+	ConnectionStatus bool `json:"connection_status"`
+	MasterRediss map[string][]map[string]string `json:"master_rediss"`
+	Version string `json:"version"`
 
-	sentinels:=[]map[string]interface{}{}
+}
+
+func GetSentinels() []SentinelsData{
+
+	sentinels:=[]SentinelsData{}
 	sentinelslist,err:=Redis.Hkeys("goredisadmin:sentinels:hash")
 	if err!=nil{
 		return sentinels
@@ -78,8 +89,8 @@ func GetSentinels() []map[string]interface{} {
 			info,_:=sentinelC.Info("Server")
 			version=info["redis_version"]
 		}
-		sentinel:=map[string]interface{}{"id":id,"hostname":tmpsentinel.Hostname,"port":tmpsentinel.Port,"version":version,
-			"masters":masters,"connection_status":ping,"master_rediss":masterrediss}
+		sentinel:=SentinelsData{Id:id,Hostname:tmpsentinel.Hostname,Port:tmpsentinel.Port,Version:version,
+			Masters:masters,ConnectionStatus:ping,MasterRediss:masterrediss}
 		sentinels=append(sentinels,sentinel)
 	}
 	return sentinels

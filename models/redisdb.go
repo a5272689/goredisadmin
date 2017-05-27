@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"encoding/json"
 	"goredisadmin/utils"
+	"strings"
 )
 
 func  GetHashName(hostname string,port int) (string) {
@@ -23,8 +24,22 @@ type RedisInfo struct {
 	Hashname string `json:"hashname"`
 }
 
-func GetRediss(redisinfos ...RedisInfo) []map[string]interface{} {
-	rediss:=[]map[string]interface{}{}
+type RedissData struct {
+	Id int `json:"id"`
+	Hostname string `json:"hostname"`
+	Port int `json:"port"`
+	ConnectionStatus bool `json:"connection_status"`
+	AuthStatus bool `json:"auth_status"`
+	PingStatus bool `json:"ping_status"`
+	Version string `json:"version"`
+	Role string `json:"role"`
+	UptimeInDays int `json:"uptime_in_days"`
+	UsedMemoryRss int `json:"used_memory_rss"`
+	Keys int `json:"keys"`
+}
+
+func GetRediss(redisinfos ...RedisInfo) []RedissData {
+	rediss:=[]RedissData{}
 	newredisinfos:=[]RedisInfo{}
 	if len(redisinfos)>0{
 		for _,redisinfo:=range redisinfos{
@@ -34,7 +49,7 @@ func GetRediss(redisinfos ...RedisInfo) []map[string]interface{} {
 				redisinfo.Save()
 			}else {
 				redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",redisinfo.Hashname)
-				json.Unmarshal([]byte(redisinfostr),redisinfo)
+				json.Unmarshal([]byte(redisinfostr),&redisinfo)
 			}
 			newredisinfos=append(newredisinfos,redisinfo)
 		}
@@ -52,18 +67,46 @@ func GetRediss(redisinfos ...RedisInfo) []map[string]interface{} {
 		}
 	}
 	for id,redisinfo:=range newredisinfos {
+		redisinfojson,_:=json.Marshal(redisinfo)
+		utils.Logger.Println(string(redisinfojson))
 		redisC, err, conn, auth, ping := NewRedis(redisinfo.Hostname, redisinfo.Port, redisinfo.Password)
-		version := ""
-		role := ""
+		var version,role string
+		var uptime_in_days,used_memory_rss,keys int
 		if err == nil {
 			info, _ := redisC.Info()
 			version = info["redis_version"]
 			role = info["role"]
+			uptime_in_days,_ = strconv.Atoi(info["uptime_in_days"])
+			used_memory_rss,err = strconv.Atoi(info["used_memory_rss"])
+			used_memory_rss=used_memory_rss/8/1024
+			dbsinfo, _ := redisC.Info("Keyspace")
+			for _,dbinfo:=range dbsinfo{
+				keyinfolist:=strings.Split(dbinfo,",")
+				infolist:=strings.Split(keyinfolist[0],"=")
+				keysnum,_:=strconv.Atoi(infolist[1])
+				keys+=keysnum
+			}
+
 		}
-		rediss = append(rediss, map[string]interface{}{"id": id, "hostname": redisinfo.Hostname, "port": redisinfo.Port,
-			"connection_status":                         conn, "auth_status": auth, "ping_status": ping, "version": version, "role": role})
+		rediss = append(rediss, RedissData{Id: id, Hostname: redisinfo.Hostname, Port: redisinfo.Port,UptimeInDays:uptime_in_days,
+			ConnectionStatus:conn, AuthStatus: auth, PingStatus: ping, Version: version, Role: role,UsedMemoryRss:used_memory_rss,Keys:keys})
 	}
 	return rediss
+}
+
+func GetRedisNames() ([]string) {
+	redis_list:=[]string{}
+	redisslist,err:=Redis.Hkeys("goredisadmin:rediss:hash")
+	if err!=nil{
+		return redis_list
+	}
+	for _,tmphashname:=range redisslist{
+		redisinfo:=&RedisInfo{}
+		redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",tmphashname)
+		json.Unmarshal([]byte(redisinfostr),redisinfo)
+		redis_list=append(redis_list,fmt.Sprintf("%v:%v",redisinfo.Hostname,redisinfo.Port))
+	}
+	return redis_list
 }
 
 
@@ -92,44 +135,78 @@ func  (r *RedisInfo)Del() (bool,error) {
 	}
 }
 
-//func (r *RedisInfo)Update() (result bool,index int,err error) {
-//	sentinelid,err:=strconv.Atoi(r.Id)
-//	if err!=nil{
-//		return false,0,err
-//	}
-//	oldhashname,err:=Redis.Lindex("goredisadmin:sentinels:list",sentinelid)
-//	if oldhashname!=r.HashName{
-//		_,err:=Redis.Lset("goredisadmin:sentinels:list",sentinelid,s.HashName)
-//		if err!=nil{
-//			return false,err
-//		}
-//		_,err=Redis.Hdel("goredisadmin:sentinels:hash",oldhashname+":hostname",oldhashname+":port")
-//		fmt.Println(err)
-//		if err!=nil {
-//			return false,err
-//		}
-//	}
-//	hmsetresult,err:=Redis.Hmset("goredisadmin:sentinels:hash",s.HashName+":hostname",s.HostName,s.HashName+":port",s.Port)
-//	if hmsetresult!="OK"||err!=nil{
-//		return false,err
-//	}else {
-//		return true,err
-//	}
-//}
+type KeysData struct {
+	Key string `json:"key"`
+	Type string `json:"type"`
+	Ttl int `json:"ttl"`
+}
 
+func (r *RedisInfo) GetKeys(pattern string) ([]KeysData) {
+	keys:=[]KeysData{}
+	if len(pattern)==0{
+		return keys
+	}
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, err, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return keys
+	}
+	keyslist,_:=redisC.Keys(pattern)
+	for _,keyname:=range keyslist{
+		ttl,_:=redisC.Ttl(keyname)
+		typestr,_:=redisC.Type(keyname)
+		keys=append(keys,KeysData{Key:keyname,Ttl:ttl,Type:typestr})
+	}
+	return keys
+}
 
-func GetAllRediss() []map[string]interface{} {
-	rediss:=[]map[string]interface{}{}
-	llen,err:=Redis.Llen("goredisadmin:rediss:list")
-	if err!=nil{
-		return rediss
+func (r *RedisInfo) DelKeys(keyslist []string) ([]string) {
+	var delkeyslist=[]string{}
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	for _,keyname:=range keyslist{
+		_,err:=redisC.Del(keyname)
+		if err==nil{
+			delkeyslist=append(delkeyslist,keyname)
+		}
 	}
-	redisslist,err:=Redis.Lrange("goredisadmin:rediss:list",0,llen)
-	if err!=nil{
-		return rediss
+	return delkeyslist
+}
+
+func (r *RedisInfo) ExpireKeys(keyslist []string,seconds int) ([]string) {
+	var delkeyslist=[]string{}
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	for _,keyname:=range keyslist{
+		_,err:=redisC.Expire(keyname,seconds)
+		if err==nil{
+			delkeyslist=append(delkeyslist,keyname)
+		}
 	}
-	for _,redisname:=range redisslist{
-		fmt.Println(redisname)
+	return delkeyslist
+}
+
+func (r *RedisInfo) PersistKeys(keyslist []string) ([]string) {
+	var delkeyslist=[]string{}
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	for _,keyname:=range keyslist{
+		_,err:=redisC.Persist(keyname)
+		if err==nil{
+			delkeyslist=append(delkeyslist,keyname)
+		}
 	}
-	return rediss
+	return delkeyslist
 }

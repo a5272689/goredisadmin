@@ -46,30 +46,15 @@ func Sentinels(w http.ResponseWriter, r *http.Request) {
 }
 
 type bootstrapTableSentinelsData struct {
-	Rows []sentinelsData `json:"rows"`
+	Rows []models.SentinelsData `json:"rows"`
 	Total int `json:"total"`
 }
 
-type sentinelsData struct {
-	Id int `json:"id"`
-	Hostname string `json:"hostname"`
-	Port int `json:"port"`
-	Masters []string `json:"masters"`
-	ConnectionStatus bool `json:"connection_status"`
-	MasterRediss map[string][]map[string]string `json:"master_rediss"`
-	Version string `json:"version"`
-	
-}
+
 
 func SentinelsDataAPI(w http.ResponseWriter, r *http.Request) {
 	alldata:=new(bootstrapTableSentinelsData)
-	alldata.Rows=[]sentinelsData{}
-	for _,sentinel:=range models.GetSentinels(){
-		alldata.Rows=append(alldata.Rows,sentinelsData{Id:sentinel["id"].(int),Version:sentinel["version"].(string),
-			Hostname:sentinel["hostname"].(string),Port:sentinel["port"].(int),Masters:sentinel["masters"].([]string),
-			ConnectionStatus:sentinel["connection_status"].(bool),MasterRediss:sentinel["master_rediss"].(map[string][]map[string]string),
-		})
-	}
+	alldata.Rows=models.GetSentinels()
 	alldata.Total=len(alldata.Rows)
 	jsonresult,_:=json.Marshal(alldata)
 	fmt.Fprint(w,string(jsonresult))
@@ -124,20 +109,11 @@ func Rediss(w http.ResponseWriter, r *http.Request) {
 }
 
 type bootstrapTableRedissData struct {
-	Rows []redissData `json:"rows"`
+	Rows []models.RedissData `json:"rows"`
 	Total int `json:"total"`
 }
 
-type redissData struct {
-	Id int `json:"id"`
-	Hostname string `json:"hostname"`
-	Port int `json:"port"`
-	ConnectionStatus bool `json:"connection_status"`
-	AuthStatus bool `json:"auth_status"`
-	PingStatus bool `json:"ping_status"`
-	Version string `json:"version"`
-	Role string `json:"role"`
-}
+
 
 func RedissDataAPI(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
@@ -158,15 +134,7 @@ func RedissDataAPI(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	alldata:=new(bootstrapTableRedissData)
-	alldata.Rows=[]redissData{}
-
-	for _,redisinfo:=range models.GetRediss(redisinfoslist...){
-		alldata.Rows=append(alldata.Rows,redissData{Id:redisinfo["id"].(int),Version:redisinfo["version"].(string),
-			Hostname:redisinfo["hostname"].(string),Port:redisinfo["port"].(int),AuthStatus:redisinfo["auth_status"].(bool),
-			ConnectionStatus:redisinfo["connection_status"].(bool),PingStatus:redisinfo["ping_status"].(bool),
-			Role:redisinfo["role"].(string),
-		})
-	}
+	alldata.Rows=models.GetRediss(redisinfoslist...)
 	alldata.Total=len(alldata.Rows)
 	jsonresult,_:=json.Marshal(alldata)
 	fmt.Fprint(w,string(jsonresult))
@@ -207,6 +175,110 @@ func RedissDataDelAPI(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w,string(jsonresult))
 }
 
+func Keys(w http.ResponseWriter, r *http.Request) {
+	session := sessions.GetSession(r)
+	fmt.Println(session.Get("user"))
+	redis_list:=[]string{}
+	r.ParseForm()
+	redis:=r.Form.Get("redis")
+	if redis!=""{
+		redis_list=append(redis_list,redis)
+	}else {
+		redis_list=models.GetRedisNames()
+	}
+	tpl,err:=pongo2.FromFile("views/contents/keys.html")
+	tpl = pongo2.Must(tpl,err)
+	context:=initconText(r)
+	context=context.Update(pongo2.Context{"rediss":redis_list})
+	tpl.ExecuteWriter(context, w)
+}
+
+
+type bootstrapTableKeysData struct {
+	Rows []models.KeysData `json:"rows"`
+	Total int `json:"total"`
+}
+
+
+func KeysDataAPI(w http.ResponseWriter, r *http.Request) {
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	jsonob,_:=simplejson.NewJson(data)
+	keysstr,_:=jsonob.Get("keys").String()
+	redisstr,_:=jsonob.Get("redis").String()
+	redislist:=strings.Split(redisstr,":")
+	redisport,_:=strconv.Atoi(redislist[1])
+	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	alldata:=new(bootstrapTableKeysData)
+	alldata.Rows=redisinfo.GetKeys(keysstr)
+	alldata.Total=len(alldata.Rows)
+	jsonresult,_:=json.Marshal(alldata)
+	fmt.Fprint(w,string(jsonresult))
+}
+
+func KeysDataDelAPI(w http.ResponseWriter, r *http.Request) {
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	jsonob,_:=simplejson.NewJson(data)
+	tmpkeyslist,_:=jsonob.Get("keys").Array()
+	keyslist:=[]string{}
+	for _,keyname:=range tmpkeyslist{
+		keyslist=append(keyslist,keyname.(string))
+	}
+	redisstr,_:=jsonob.Get("redis").String()
+	redislist:=strings.Split(redisstr,":")
+	redisport,_:=strconv.Atoi(redislist[1])
+	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	del_keys:=redisinfo.DelKeys(keyslist)
+	result:=new(JsonResult)
+	result.Result=true
+	result.Info=strings.Join(del_keys,",")
+	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
+
+func KeysDataExpireAPI(w http.ResponseWriter, r *http.Request) {
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	jsonob,_:=simplejson.NewJson(data)
+	tmpkeyslist,_:=jsonob.Get("keys").Array()
+	keyslist:=[]string{}
+	for _,keyname:=range tmpkeyslist{
+		keyslist=append(keyslist,keyname.(string))
+	}
+	redisstr,_:=jsonob.Get("redis").String()
+	seconds,_:=jsonob.Get("seconds").Int()
+	redislist:=strings.Split(redisstr,":")
+	redisport,_:=strconv.Atoi(redislist[1])
+	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	del_keys:=redisinfo.ExpireKeys(keyslist,seconds)
+	result:=new(JsonResult)
+	result.Result=true
+	result.Info=strings.Join(del_keys,",")
+	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
+
+func KeysDataPersistAPI(w http.ResponseWriter, r *http.Request) {
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	jsonob,_:=simplejson.NewJson(data)
+	tmpkeyslist,_:=jsonob.Get("keys").Array()
+	keyslist:=[]string{}
+	for _,keyname:=range tmpkeyslist{
+		keyslist=append(keyslist,keyname.(string))
+	}
+	redisstr,_:=jsonob.Get("redis").String()
+	redislist:=strings.Split(redisstr,":")
+	redisport,_:=strconv.Atoi(redislist[1])
+	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	del_keys:=redisinfo.PersistKeys(keyslist)
+	result:=new(JsonResult)
+	result.Result=true
+	result.Info=strings.Join(del_keys,",")
+	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
 
 func Logout(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)
