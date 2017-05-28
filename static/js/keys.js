@@ -38,11 +38,10 @@ function tableinit() {
         onClickRow:function (row, $element, field) {
             $('#keys_body_row').show();
             $('#title_keys_make').text("编辑");
-            $('#title_keys_make').append("<br><small>key："+row.key+"<br>TTL："+row.ttl+"<br>类型："+row.type+"</small>");
+            // $('#title_keys_make').append("<br><small>key："+row.key+"<br>TTL："+row.ttl+"<br>类型："+row.type+"</small>");
             $('#key_type_select').val(row.type);
             init_key_form();
             $('#key_type_select').attr('disabled','disabled');
-            $('#key_form_body').hide();
             $('#key_form_body').show();
             $('#key_table_body').show();
             $('#key_name').val(row.key);
