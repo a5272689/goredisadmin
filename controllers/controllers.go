@@ -293,6 +293,64 @@ func KeysDataPersistAPI(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w,string(jsonresult))
 }
 
+func KeySaveAPI(w http.ResponseWriter, r *http.Request) {
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	utils.Logger.Println(string(data))
+	jsonob,_:=simplejson.NewJson(data)
+	key_type,_:=jsonob.Get("type").String()
+	key,_:=jsonob.Get("key").String()
+	val,_:=jsonob.Get("val").String()
+	field,_:=jsonob.Get("field").String()
+	score,_:=jsonob.Get("score").Int()
+	redisstr,_:=jsonob.Get("redis").String()
+	redislist:=strings.Split(redisstr,":")
+	redisport,_:=strconv.Atoi(redislist[1])
+	redis_db,_:=jsonob.Get("redis_db").String()
+	redis_db_index,_:=strconv.Atoi(redis_db)
+	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	result:=new(JsonResult)
+	result.Result=true
+	switch key_type {
+	case "string":
+		_,err:=redisinfo.SetKey(key,val,redis_db_index)
+		if err!=nil{
+			result.Result=false
+			result.Info=fmt.Sprintf("报错：%v",err)
+		}
+	case "hash":
+		_,err:=redisinfo.HsetKey(key,field,val,redis_db_index)
+		if err!=nil{
+			result.Result=false
+			result.Info=fmt.Sprintf("报错：%v",err)
+		}
+	case "list":
+		_,err:=redisinfo.LpushKey(key,val,redis_db_index)
+		if err!=nil{
+			result.Result=false
+			result.Info=fmt.Sprintf("报错：%v",err)
+		}
+	case "set":
+		_,err:=redisinfo.SaddKey(key,val,redis_db_index)
+		if err!=nil{
+			result.Result=false
+			result.Info=fmt.Sprintf("报错：%v",err)
+		}
+	case "zset":
+		_,err:=redisinfo.ZaddKey(key,score,val,redis_db_index)
+		if err!=nil{
+			result.Result=false
+			result.Info=fmt.Sprintf("报错：%v",err)
+		}
+	default:
+		result.Result=false
+		result.Info="不支持的类型"
+	}
+	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
+
+
 func Logout(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)
 	session.Clear()

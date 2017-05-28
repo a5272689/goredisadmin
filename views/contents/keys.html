@@ -35,7 +35,7 @@
                             <input type="text" id="keys_form" class="form-control" placeholder="*">
                         </div>
                     </div>
-                    <div class="row" style="margin-bottom: 5px;padding-bottom: 5px;margin-top: 15px;padding-top: 10px;border-top: double;border-bottom-color: #0a628f">
+                    <div class="row" style="margin-bottom: 5px;padding-bottom: 5px;margin-top: 15px;padding-top: 10px;border-top: double;border-top-color: #9eacb4;">
                         <div class="col-md-2" style="margin-left: -15px">
                             <button type="button" class="btn btn-danger" id="keysdelbutton">删除</button>
                         </div>
@@ -51,7 +51,9 @@
                             </div>
                         </div>
                     </div>
-
+                    <div class="row" style="margin-top: 5px">
+                        <button class="btn btn-primary" type="button" id="newkey">新建key</button>
+                    </div>
                     <div class="row" style="margin-top: 5px">
                         <table id="keystable"></table>
                     </div>
@@ -59,66 +61,77 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-7">
-            <div class="panel">
-                <div class="panel-body">
-                    <div class="row">
+        <div class="col-md-7" id="keys_body_row" style="display: none">
+
+                <div class="panel">
+                    <div class="panel-heading" style="border-bottom: double;border-bottom-color: #9eacb4;" id="title_keys_make">新建KEY</div>
+                    <div class="panel-body" id="key_form_body">
+                        <div class="row">
+                            <div class="col-md-4" style="margin-top: 5px">
+                                <div class="input-group">
+                                    <span class="input-group-addon">类型：</span>
+                                    <select class="form-control" id="key_type_select">
+                                        <option value="string">string</option>
+                                        <option value="list">list</option>
+                                        <option value="set">set</option>
+                                        <option value="zset">zset</option>
+                                        <option value="hash">hash</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-top: 20px" id="key_name_group">
+                            <div class="col-md-5">
+                                <div class="input-group">
+                                    <span class="input-group-addon">key名：</span>
+                                    <input type="text" id="key_name" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-top: 5px" id="key_field_name_group">
+                            <div class="col-md-5">
+                                <div class="input-group"  >
+                                    <span class="input-group-addon">field名：</span>
+                                    <input type="text" id="key_field_name" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-top: 5px" id="key_score_group">
+                            <div class="col-md-5">
+                                <div class="input-group"  >
+                                    <span class="input-group-addon">score：</span>
+                                    <input type="number" id="key_score" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-top: 5px" id="key_val_group">
+                            <div class="col-md-5">
+                                <div class="input-group">
+                                    <span class="input-group-addon">值：</span>
+                                    <input type="text" id="key_val" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-top: 5px;float: right">
+                            <p style="display: none;color: #be2924" id="key_save_wran">所有字段不能为空！！！</p>
+                            <div class="btn-group" style="float: right">
+                                <button class="btn btn-primary" type="button" id="key_save">保存</button>
+                                <button type="button" class="btn btn-default" id="key_cancel">取消</button>
+                            </div>
+                        </div>
+
                     </div>
-                    <div class="row">
+                    <div class="panel-body" id="key_table_body">
+                        <div class="row">
+                            <div class="col-md-4" style="margin-top: 5px">
+                            </div>
+                        </div>
+
                     </div>
-                    <table id="redisstable"></table>
                 </div>
-            </div>
+
         </div>
     </div>
-    <!--<div class="row" id="formrow" style="display: none">-->
-        <!--<div class="col-md-4">-->
-            <!--&lt;!&ndash;表单&ndash;&gt;-->
-            <!--<div class="panel">-->
-                <!--<div class="panel-heading">-->
-                    <!--<h3 class="panel-title" id="form_title">新建</h3>-->
-                <!--</div>-->
-
-                <!--<div class="panel-body">-->
-                    <!--<input type="hidden" id="sentinelid_form">-->
-                    <!--<div class="row" id="hostname_form_row">-->
-                        <!--<div class="form-group">-->
-                            <!--<label for="hostname_form" class="col-sm-3 control-label">主机名(IP)</label>-->
-                            <!--<div class="col-sm-8">-->
-                                <!--<input type="text" id="hostname_form" class="form-control" placeholder="0.0.0.0">-->
-                            <!--</div>-->
-                        <!--</div>-->
-                    <!--</div>-->
-                    <!--<br>-->
-                    <!--<div class="row" id="port_form_row">-->
-                        <!--<div class="form-group">-->
-                            <!--<label for="port_form" class="col-sm-3 control-label">端口</label>-->
-                            <!--<div class="col-sm-8">-->
-                                <!--<input type="text" id="port_form" class="form-control" placeholder="0">-->
-                            <!--</div>-->
-                        <!--</div>-->
-                    <!--</div>-->
-                    <!--<br>-->
-                    <!--<div class="row">-->
-                        <!--<div class="form-group">-->
-                            <!--<label for="port_form" class="col-sm-3 control-label">密码</label>-->
-                            <!--<div class="col-sm-8">-->
-                                <!--<input type="password" id="password_form" class="form-control" placeholder="******">-->
-                            <!--</div>-->
-                        <!--</div>-->
-                    <!--</div>-->
-                    <!--<br>-->
-                    <!--<p style="color: #be2924" id="forminfo"></p>-->
-                    <!--<div class="row">-->
-                        <!--<div class="btn-group" style="float: right">-->
-                            <!--<button type="button" class="btn btn-primary" id="redisssavebutton">保存</button>-->
-                            <!--<button type="button" class="btn btn-default" id="redisscancelbutton">取消</button>-->
-                        <!--</div>-->
-                    <!--</div>-->
-                <!--</div>-->
-            <!--</div>-->
-        <!--</div>-->
-    <!--</div>-->
 
 </div>
 

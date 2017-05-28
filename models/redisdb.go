@@ -245,3 +245,53 @@ func (r *RedisInfo) PersistKeys(keyslist []string,dbindex int) ([]string) {
 	utils.Logger.Println("persist_key_list",persist_key_list)
 	return persist_key_list
 }
+
+func (r *RedisInfo) SetKey(key,val interface{},dbindex int) (string, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Select(dbindex)
+	return redisC.Set(key,val)
+}
+
+func (r *RedisInfo) HsetKey(key,field string,value interface{},dbindex int) (int, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Select(dbindex)
+	return redisC.Hset(key,field,value)
+}
+
+func (r *RedisInfo) LpushKey(key string,value interface{},dbindex int) (int, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Select(dbindex)
+	return redisC.Lpush(key,value)
+}
+
+func (r *RedisInfo) SaddKey(key string,value interface{},dbindex int) (int, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Select(dbindex)
+	return redisC.Sadd(key,value)
+}
+
+func (r *RedisInfo) ZaddKey(key string,score int,value interface{},dbindex int) (int, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Select(dbindex)
+	return redisC.Zadd(key,score,value)
+}

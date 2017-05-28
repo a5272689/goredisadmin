@@ -18,7 +18,7 @@ function tableinit() {
         url:'/keysdata',
         queryParams:function(params) {
             params["redis"]=$('#redis_select').val();
-            params["keys"]=$('#keys_form').val();
+            params["keys"]=$.trim($('#keys_form').val());
             params["redis_db"]=$('#redis_db_select').val();
             return params;
         },
@@ -36,6 +36,17 @@ function tableinit() {
             return res.rows;
         },
         onClickRow:function (row, $element, field) {
+            $('#keys_body_row').show();
+            $('#title_keys_make').text("编辑");
+            $('#title_keys_make').append("<br><small>key："+row.key+"<br>TTL："+row.ttl+"<br>类型："+row.type+"</small>");
+            $('#key_type_select').val(row.type);
+            init_key_form();
+            $('#key_type_select').attr('disabled','disabled');
+            $('#key_form_body').hide();
+            $('#key_form_body').show();
+            $('#key_table_body').show();
+            $('#key_name').val(row.key);
+            $('#key_name').attr('readonly','readonly');
             console.log(row)
         }
     }
@@ -110,7 +121,12 @@ $('#keysPersistbutton').click(function(event){
 });
 
 $('#redis_select').change(function () {
-    redis_db_select()
+    redis_db_select();
+    $('#keystable').bootstrapTable("refresh",{});
+});
+
+$('#redis_db_select').change(function () {
+    $('#keystable').bootstrapTable("refresh",{});
 });
 
 function redis_db_select() {
@@ -123,113 +139,113 @@ function redis_db_select() {
     }
 }
 
+$('#newkey').click(function () {
+    $('#keys_body_row').show();
+    $('#title_keys_make').text("新建KEY");
+    $('#key_form_body').show();
+    $('#key_table_body').hide();
+    init_key_form();
 
-// $('#redisssavebutton').click(function () {
-//     var hostname=$.trim($('#hostname_form').val()),
-//         port=Number($.trim($('#port_form').val())),
-//         password=$.trim($('#password_form').val()),
-//         senddata={"port":port,"hostname":hostname,"password":password};
-//     var $forminfo=$('#forminfo');
-//     if (port==0||hostname==""){
-//         $forminfo.text("所有字段不能为空!!!");
-//         $forminfo.show();
-//         return
-//     }
-//     $.ajax({
-//         url:"/redisschange",
-//         type: "post",
-//         data:senddata,
-//         traditional:true,
-//         dataType:"json",
-//         success:function (res) {
-//             if (res.result){
-//                 tablerowshow();
-//                 $('#formrow').hide();
-//             }else {
-//                 $forminfo.text(res.info);
-//                 $forminfo.show()
-//             }
-//         },
-//         error:function () {
-//             $forminfo.text("请求失败！！！");
-//             $forminfo.show()
-//         }
-//     });
-// });
-//
-// $('#redisscancelbutton').click(function () {
-//     tablerowshow();
-//     $('#formrow').hide();
-// });
-//
-// $('#newredis').click(function () {
-//     forminit();
-//     $('#tablerow').hide();
-//     $('#formrow').show();
-// });
-//
-// function writeredis(id) {
-//     var rowdata=$('#redisstable').bootstrapTable('getRowByUniqueId',id);
-//     $('#form_title').text("修改redis密码");
-//     $('#hostname_form_row').hide();
-//     $('#hostname_form').val(rowdata.hostname);
-//     $('#port_form_row').hide();
-//     $('#port_form').val(rowdata.port);
-//     $('#forminfo').hide();
-//     $('#tablerow').hide();
-//     $('#formrow').show();
-// }
-//
-// function forminit(data) {
-//     $('#form_title').text("新建redis");
-//     $('#hostname_form_row').show();
-//     $('#port_form_row').show();
-//     $('#forminfo').hide()
-// }
-//
-// function lookredis(id) {
-//     var redisdata=$('#redisstable').bootstrapTable('getRowByUniqueId', id);
-//     console.log(redisdata)
-// }
-//
-//
-// function tablerowshow() {
-//     $('#redisstable').bootstrapTable("refresh",{});
-//     $('#tablerow').show();
-// }
-//
-// function delredis(id) {
-//     var info=$('#redisstable').bootstrapTable('getRowByUniqueId', id);
-//     var senddata=[{"hostname":info.hostname,"port":info.port}];
-//     $.ajax({
-//         url:"/redissdel",
-//         type: "post",
-//         data:JSON.stringify(senddata),
-//         // traditional:true,
-//         contentType: "application/json",
-//         dataType:'json',
-//         success:function (res) {
-//             $('#redisstable').bootstrapTable("refresh",{});
-//         },
-//     });
-// }
-//
-// $('#delselectrediss').click(function () {
-//         var infos=$('#redisstable').bootstrapTable('getAllSelections');
-//         var senddata=[];
-//         for (var i in infos){
-//             senddata.push({"hostname":infos[i].hostname,"port":infos[i].port})
-//         }
-//         $.ajax({
-//             url:"/redissdel",
-//             type: "post",
-//             data:JSON.stringify(senddata),
-//             // traditional:true,
-//             contentType: "application/json",
-//             dataType:'json',
-//             success:function (res) {
-//                 $('#redisstable').bootstrapTable("refresh",{});
-//             },
-//         });
-//     }
-// );
+});
+
+function init_key_form() {
+    var key_type_select=$('#key_type_select').val();
+    switch (key_type_select)
+    {
+        case "string":
+            init_key_str_form();
+            break;
+        case "list":
+            init_key_str_form();
+            break;
+        case "set":
+            init_key_str_form();
+            break;
+        case "zset":
+            init_key_zset_form();
+            break;
+        case "hash":
+            init_key_hash_form();
+            break;
+    }
+}
+
+
+function init_key_str_form() {
+    empty_form();
+    $('#key_name_group').show();
+    $('#key_val_group').show();
+}
+
+function init_key_hash_form() {
+    empty_form();
+    $('#key_name_group').show();
+    $('#key_field_name_group').show();
+    $('#key_val_group').show();
+}
+
+function init_key_zset_form() {
+    empty_form();
+    $('#key_name_group').show();
+    $('#key_score_group').show();
+    $('#key_val_group').show();
+}
+
+function empty_form() {
+    $('#key_save_wran').hide();
+    $('#key_type_select').removeAttr('disabled');
+    $('#key_name').val("");
+    $('#key_name').removeAttr("readonly");
+    $('#key_field_name').val("");
+    $('#key_val').val("");
+    $('#key_field_name_group').hide();
+    $('#key_name_group').hide();
+    $('#key_val_group').hide();
+    $('#key_score_group').hide();
+}
+
+$('#key_type_select').change(function () {
+    init_key_form()
+});
+
+
+$('#key_cancel').click(function () {
+    if ($('#title_keys_make').text()=="新建KEY"){
+        return
+    }
+    $('#key_form_body').hide();
+    $('#key_table_body').show();
+});
+
+
+$('#key_save').click(function () {
+    var type=$('#key_type_select').val(),
+        key=$.trim($('#key_name').val()),
+        val=$.trim($('#key_val').val()),
+        score=$.trim($('#key_score').val()),
+        field=$.trim($('#key_field_name').val());
+    if (key==""&&val==""){
+        $('#key_save_wran').show()
+    }
+    if (type=="hash"){
+        if (field==""){
+            $('#key_save_wran').show()
+        }
+    }
+    if (type=="zset"){
+        if (score==""){
+            $('#key_save_wran').show()
+        }
+    }
+    $.ajax({
+        url:"/keysave",
+        type: "post",
+        data:JSON.stringify({"type":type,"key":key,"val":val,"field":field,"score":score,"redis":$('#redis_select').val(),"redis_db":$('#redis_db_select').val()}),
+        // traditional:true,
+        contentType: "application/json",
+        dataType:'json',
+        success:function (res) {
+            $('#keystable').bootstrapTable("refresh",{});
+        }
+    });
+});
