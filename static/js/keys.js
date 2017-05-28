@@ -38,7 +38,9 @@ function tableinit() {
         onClickRow:function (row, $element, field) {
             $('#keys_body_row').show();
             $('#title_keys_make').text("编辑");
-            // $('#title_keys_make').append("<br><small>key："+row.key+"<br>TTL："+row.ttl+"<br>类型："+row.type+"</small>");
+            $('#oldkey').val(row.key);
+            $('#oldttl').val(row.ttl);
+            $('#oldtype').val(row.type);
             $('#key_type_select').val(row.type);
             init_key_form();
             $('#key_type_select').attr('disabled','disabled');
@@ -46,9 +48,81 @@ function tableinit() {
             $('#key_table_body').show();
             $('#key_name').val(row.key);
             $('#key_name').attr('readonly','readonly');
-            console.log(row)
+            $('#key_value_table').bootstrapTable('refreshOptions',keyvaluetableinit())
         }
     }
+}
+$('#key_value_table').bootstrapTable(keyvaluetableinit());
+function keyvaluetableinit() {
+    var tabledata={
+        striped:true,
+        uniqueId:"id",
+        // cardView:true,
+        pagination:true,
+        pageNumber:1,
+        pageSize:10,
+        pageList:[10,100,1000,10000,100000],
+        sidePagination:'client',
+        // clickToSelect:true,
+        url:'/keydata',
+        queryParams:function(params) {
+            params["key"]=$('#oldkey').val();
+            params["type"]=$('#oldtype').val();
+            params["redis"]=$('#redis_select').val();
+            params["redis_db"]=$('#redis_db_select').val();
+            return params;
+        },
+        method:'post',
+        responseHandler:function(res) {
+            return res.rows;
+        },
+    };
+    switch ($('#oldtype').val())
+    {
+        case "string":
+            tabledata.columns=[{
+                field: 'val',
+                title: '值'
+            }];
+            break;
+        case "list":
+            tabledata.columns=[{
+                field: 'index',
+                title: '索引'
+            },{
+                field: 'val',
+                title: '值'
+            }];
+            break;
+        case "set":
+            tabledata.columns=[{
+                field: 'index',
+                title: '索引'
+            },{
+                field: 'val',
+                title: '值'
+            }];
+            break;
+        case "zset":
+            tabledata.columns=[{
+                field: 'index',
+                title: '索引'
+            },{
+                field: 'val',
+                title: '值'
+            }];
+            break;
+        case "hash":
+            tabledata.columns=[{
+                field: 'field',
+                title: 'field'
+            },{
+                field: 'val',
+                title: '值'
+            }];
+            break;
+    }
+    return tabledata
 }
 
 

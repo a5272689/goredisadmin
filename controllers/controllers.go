@@ -350,6 +350,81 @@ func KeySaveAPI(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w,string(jsonresult))
 }
 
+func KeyDataAPI(w http.ResponseWriter, r *http.Request) {
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	utils.Logger.Println(string(data))
+	jsonob,_:=simplejson.NewJson(data)
+	keystr,_:=jsonob.Get("key").String()
+	key_type,_:=jsonob.Get("type").String()
+	redisstr,_:=jsonob.Get("redis").String()
+	redislist:=strings.Split(redisstr,":")
+	redisport,_:=strconv.Atoi(redislist[1])
+	redis_db,_:=jsonob.Get("redis_db").String()
+	redis_db_index,_:=strconv.Atoi(redis_db)
+	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	alldata:=make(map[string][]map[string]string)
+	alldata["rows"]=[]map[string]string{}
+	switch key_type {
+	case "string":
+		val,err:=redisinfo.GetKey(keystr,redis_db_index)
+		utils.Logger.Println(val)
+		valmap:=make(map[string]string)
+		if err==nil{
+			valmap["val"]=val
+			alldata["rows"]=append(alldata["rows"],valmap)
+
+		}
+	case "hash":
+		vals,err:=redisinfo.HmgetKey(keystr,redis_db_index)
+		if err==nil{
+			for field,val:=range vals{
+				valmap:=make(map[string]string)
+				valmap["val"]=val
+				valmap["field"]=field
+				alldata["rows"]=append(alldata["rows"],valmap)
+			}
+		}
+		utils.Logger.Println(vals)
+	case "list":
+		vals,err:=redisinfo.LrangeKey(keystr,redis_db_index)
+		if err==nil{
+			for index,val:=range vals {
+				valmap := make(map[string]string)
+				valmap["val"] = val
+				valmap["index"]=strconv.Itoa(index)
+				alldata["rows"] = append(alldata["rows"], valmap)
+			}
+		}
+		utils.Logger.Println(vals)
+	case "set":
+		vals,err:=redisinfo.SmembersKey(keystr,redis_db_index)
+		if err==nil{
+			for index,val:=range vals {
+				valmap := make(map[string]string)
+				valmap["val"] = val
+				valmap["index"]=strconv.Itoa(index)
+				alldata["rows"] = append(alldata["rows"], valmap)
+			}
+		}
+		utils.Logger.Println(vals)
+	//case "zset":
+	//	_,err:=redisinfo.ZaddKey(key,score,val,redis_db_index)
+	//	if err!=nil{
+	//		result.Result=false
+	//		result.Info=fmt.Sprintf("报错：%v",err)
+	//	}
+	}
+	//redis_db_index,_:=strconv.Atoi(redis_db)
+	//redislist:=strings.Split(redisstr,":")
+	//redisport,_:=strconv.Atoi(redislist[1])
+	//redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	//alldata:=new(bootstrapTableKeysData)
+	//alldata.Rows=redisinfo.GetKeys(keysstr,redis_db_index)
+	//alldata.Total=len(alldata.Rows)
+	jsonresult,_:=json.Marshal(alldata)
+	fmt.Fprint(w,string(jsonresult))
+}
 
 func Logout(w http.ResponseWriter, r *http.Request) {
 	session := sessions.GetSession(r)
