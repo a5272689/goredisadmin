@@ -164,8 +164,8 @@ func  (r *RedisInfo)Del() (bool,error) {
 
 type KeysData struct {
 	Key string `json:"key"`
-	Type string `json:"type"`
-	Ttl int `json:"ttl"`
+	//Type string `json:"type"`
+	//Ttl int `json:"ttl"`
 }
 
 func (r *RedisInfo) GetKeys(pattern string,dbindex int) ([]KeysData) {
@@ -184,9 +184,9 @@ func (r *RedisInfo) GetKeys(pattern string,dbindex int) ([]KeysData) {
 	}
 	keyslist,_:=redisC.Keys(pattern)
 	for _,keyname:=range keyslist{
-		ttl,_:=redisC.Ttl(keyname)
-		typestr,_:=redisC.Type(keyname)
-		keys=append(keys,KeysData{Key:keyname,Ttl:ttl,Type:typestr})
+		//ttl,_:=redisC.Ttl(keyname)
+		//typestr,_:=redisC.Type(keyname)
+		keys=append(keys,KeysData{Key:keyname})
 	}
 	utils.Logger.Println("keys",keys)
 	return keys
@@ -287,6 +287,7 @@ func (r *RedisInfo) SaddKey(key string,value interface{},dbindex int) (int, erro
 }
 
 func (r *RedisInfo) ZaddKey(key string,score int,value interface{},dbindex int) (int, error) {
+	utils.Logger.Println(key,score,value,dbindex)
 	r.Hashname=GetHashName(r.Hostname,r.Port)
 	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
@@ -325,8 +326,7 @@ func (r *RedisInfo) LrangeKey(key string,dbindex int) ([]string, error) {
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
 	redisC.Select(dbindex)
-	vals_count,_:=redisC.Llen(key)
-	return redisC.Lrange(key,0,vals_count)
+	return redisC.Lrange(key,0,-1)
 }
 
 func (r *RedisInfo) SmembersKey(key string,dbindex int) ([]string, error) {
@@ -337,4 +337,45 @@ func (r *RedisInfo) SmembersKey(key string,dbindex int) ([]string, error) {
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
 	redisC.Select(dbindex)
 	return redisC.Smembers(key)
+}
+
+func (r *RedisInfo) TtlKey(key string,dbindex int) (int, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Select(dbindex)
+	return redisC.Ttl(key)
+}
+
+func (r *RedisInfo) TypeKey(key string,dbindex int) (string, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Select(dbindex)
+	return redisC.Type(key)
+}
+
+
+func (r *RedisInfo) ZrangeKey(key string,dbindex int) ([]string, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Select(dbindex)
+	return redisC.Zrange(key,0,-1,true)
+}
+
+func (r *RedisInfo) RenameKey(key,newkey string,dbindex int) (int, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Select(dbindex)
+	return redisC.Renamenx(key,newkey)
 }

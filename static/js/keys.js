@@ -7,7 +7,7 @@ $('#keystable').bootstrapTable(tableinit());
 function tableinit() {
     return {
         striped:true,
-        uniqueId:"id",
+        uniqueId:"rowid",
         // cardView:true,
         pagination:true,
         pageNumber:1,
@@ -33,27 +33,60 @@ function tableinit() {
         }
         ],
         responseHandler:function(res) {
-            return res.rows;
+            var newdata=[];
+            for (var rowid in res.rows){
+                var newrow=res.rows[rowid];
+                newrow["rowid"]=Number(rowid);
+                newdata.push(newrow)
+            }
+            return newdata;
         },
         onClickRow:function (row, $element, field) {
-            $('#keys_body_row').show();
-            $('#title_keys_make').text("编辑");
-            $('#oldkey').val(row.key);
-            $('#oldttl').val(row.ttl);
-            $('#oldtype').val(row.type);
-            $('#key_type_select').val(row.type);
-            init_key_form();
-            $('#key_type_select').attr('disabled','disabled');
-            $('#key_form_body').show();
-            $('#key_table_body').show();
-            $('#key_name').val(row.key);
-            $('#key_name').attr('readonly','readonly');
-            $('#key_value_table').bootstrapTable('refreshOptions',keyvaluetableinit())
+            $('#key_row_id').val(row.rowid);
+            writekeyinfo()
         }
     }
 }
-$('#key_value_table').bootstrapTable(keyvaluetableinit());
-function keyvaluetableinit() {
+
+function writekeyinfo() {
+    var row=$('#keystable').bootstrapTable("getRowByUniqueId",$('#key_row_id').val());
+    console.log(row,$('#key_row_id').val());
+    var senddata={"key":row.key,"redis":$('#redis_select').val(),"redis_db":$('#redis_db_select').val()}
+    $.ajax({
+        url:"/keydata",
+        type: "post",
+        data:JSON.stringify(senddata),
+        contentType: "application/json",
+        dataType:'json',
+        success:function (res) {
+            empty_form();
+            $('#key_type_select').val(res.type);
+            $('#key_type_select').attr('disabled','disabled');
+            init_key_form();
+            $('#keys_body_row').show();
+            $("#key_info_table").show();
+            $('#key_table_body').show();
+            $('#title_keys_make').text("编辑");
+            $('#oldtonew_key_name').val(row.key);
+            $('#oldkey').text(row.key);
+            $('#oldttl').text(res.ttl);
+            $('#oldtype').text(res.type);
+            $('#key_name').val(row.key);
+            $('#key_name').attr('readonly','readonly');
+            if (res.type=="string"){
+                $('#key_val').val(res.rows[0]["val"])
+            }
+            $('#rename_key_name_group').show();
+            $('#key_value_table').bootstrapTable('refreshOptions',keyvaluetableinit(res));
+            console.log(res)
+        }
+    });
+}
+
+
+
+$('#key_value_table').bootstrapTable({});
+function keyvaluetableinit(res) {
     var tabledata={
         striped:true,
         uniqueId:"id",
@@ -63,21 +96,9 @@ function keyvaluetableinit() {
         pageSize:10,
         pageList:[10,100,1000,10000,100000],
         sidePagination:'client',
-        // clickToSelect:true,
-        url:'/keydata',
-        queryParams:function(params) {
-            params["key"]=$('#oldkey').val();
-            params["type"]=$('#oldtype').val();
-            params["redis"]=$('#redis_select').val();
-            params["redis_db"]=$('#redis_db_select').val();
-            return params;
-        },
-        method:'post',
-        responseHandler:function(res) {
-            return res.rows;
-        },
+        data:res.rows,
     };
-    switch ($('#oldtype').val())
+    switch (res.type)
     {
         case "string":
             tabledata.columns=[{
@@ -105,8 +126,8 @@ function keyvaluetableinit() {
             break;
         case "zset":
             tabledata.columns=[{
-                field: 'index',
-                title: '索引'
+                field: 'score',
+                title: '权重值'
             },{
                 field: 'val',
                 title: '值'
@@ -125,7 +146,7 @@ function keyvaluetableinit() {
     return tabledata
 }
 
-
+// 监控keys输入框的输入，如果是回车，则刷新下方的key表
 $('#keys_form').keydown(function(event){
     if (event.keyCode==13) {
         $('#keystable').bootstrapTable("refresh",{});
@@ -196,10 +217,12 @@ $('#keysPersistbutton').click(function(event){
 $('#redis_select').change(function () {
     redis_db_select();
     $('#keystable').bootstrapTable("refresh",{});
+    $('#keys_body_row').hide();
 });
 
 $('#redis_db_select').change(function () {
     $('#keystable').bootstrapTable("refresh",{});
+    $('#keys_body_row').hide();
 });
 
 function redis_db_select() {
@@ -213,17 +236,17 @@ function redis_db_select() {
 }
 
 $('#newkey').click(function () {
-    $('#keys_body_row').show();
+    empty_form();
     $('#title_keys_make').text("新建KEY");
-    $('#key_form_body').show();
-    $('#key_table_body').hide();
+    $('#keys_body_row').show();
     init_key_form();
-
 });
 
 function init_key_form() {
-    var key_type_select=$('#key_type_select').val();
-    switch (key_type_select)
+    var key_type=$('#key_type_select').val();
+    $('#key_field_name').val("");
+    $('#key_score').val("");
+    switch (key_type)
     {
         case "string":
             init_key_str_form();
@@ -245,36 +268,39 @@ function init_key_form() {
 
 
 function init_key_str_form() {
-    empty_form();
-    $('#key_name_group').show();
-    $('#key_val_group').show();
+    $('#key_score_group').hide();
+    $('#key_field_name_group').hide();
 }
 
 function init_key_hash_form() {
-    empty_form();
-    $('#key_name_group').show();
     $('#key_field_name_group').show();
-    $('#key_val_group').show();
+    $('#key_score_group').hide();
 }
 
 function init_key_zset_form() {
-    empty_form();
-    $('#key_name_group').show();
     $('#key_score_group').show();
-    $('#key_val_group').show();
+    $('#key_field_name_group').hide();
 }
 
 function empty_form() {
-    $('#key_save_wran').hide();
+
     $('#key_type_select').removeAttr('disabled');
     $('#key_name').val("");
     $('#key_name').removeAttr("readonly");
+    $('#key_row_id').val("");
+    $('#oldkey').text("");
+    $('#oldttl').text("");
+    $('#oldtype').text("");
     $('#key_field_name').val("");
     $('#key_val').val("");
+    $('#key_score').val("");
+    $('#key_save_wran').hide();
+    $("#key_info_table").hide();
+    $('#rename_key_name_group').hide();
     $('#key_field_name_group').hide();
-    $('#key_name_group').hide();
-    $('#key_val_group').hide();
     $('#key_score_group').hide();
+    $('#key_table_body').hide();
+
 }
 
 $('#key_type_select').change(function () {
@@ -283,11 +309,7 @@ $('#key_type_select').change(function () {
 
 
 $('#key_cancel').click(function () {
-    if ($('#title_keys_make').text()=="新建KEY"){
-        return
-    }
-    $('#key_form_body').hide();
-    $('#key_table_body').show();
+    $('#keys_body_row').hide();
 });
 
 
@@ -297,7 +319,7 @@ $('#key_save').click(function () {
         val=$.trim($('#key_val').val()),
         score=$.trim($('#key_score').val()),
         field=$.trim($('#key_field_name').val());
-    if (key==""&&val==""){
+    if (key==""||val==""){
         $('#key_save_wran').show()
     }
     if (type=="hash"){
@@ -319,6 +341,27 @@ $('#key_save').click(function () {
         dataType:'json',
         success:function (res) {
             $('#keystable').bootstrapTable("refresh",{});
+            $('#keys_body_row').hide();
+        }
+    });
+});
+
+$('#rename_key_name').click(function () {
+    var key=$.trim($('#key_name').val()),
+        newkey=$.trim($('#oldtonew_key_name').val());
+    if (newkey==""){
+        $('#key_save_wran').show()
+    }
+    $.ajax({
+        url:"/keyrename",
+        type: "post",
+        data:JSON.stringify({"key":key,"newkey":newkey,"redis":$('#redis_select').val(),"redis_db":$('#redis_db_select').val()}),
+        // traditional:true,
+        contentType: "application/json",
+        dataType:'json',
+        success:function (res) {
+            $('#keystable').bootstrapTable("refresh",{});
+            $('#keys_body_row').hide();
         }
     });
 });

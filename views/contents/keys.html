@@ -65,67 +65,85 @@
 
                 <div class="panel">
                     <div class="panel-heading" style="border-bottom: double;border-bottom-color: #9eacb4;" id="title_keys_make">新建KEY</div>
-                    <div class="panel-body" id="key_form_body">
+                    <div class="panel-body" style="border-bottom: double;border-bottom-color: #9eacb4;" id="key_form_body">
                         <div class="row">
-                            <div class="col-md-4" style="margin-top: 5px">
-                                <div class="input-group">
-                                    <span class="input-group-addon">类型：</span>
-                                    <select class="form-control" id="key_type_select">
-                                        <option value="string">string</option>
-                                        <option value="list">list</option>
-                                        <option value="set">set</option>
-                                        <option value="zset">zset</option>
-                                        <option value="hash">hash</option>
-                                    </select>
+                            <div class="col-md-7" style="margin-right: 15px" id="key_info_table">
+                                <div class="row"  id="old_key_name_group">
+                                    <table class="table">
+                                        <tbody>
+                                        <tr>
+                                            <td><h5>KEY: <small id="oldkey"></small></h5></td>
+                                        </tr>
+                                        <tr>
+                                            <td><h5>TTL: <small id="oldttl"></small></h5></td>
+                                        </tr>
+                                        <tr>
+                                            <td><h5>类型: <small id="oldtype"></small></h5></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="row" style="margin-bottom: 20px" id="rename_key_name_group">
+                                    <input type="hidden" id="key_row_id" class="form-control">
+                                    <div class="input-group">
+                                        <input type="text" id="oldtonew_key_name" class="form-control">
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-info" type="button" id="rename_key_name">重命名</button>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">类型：</span>
+                                            <select class="form-control" id="key_type_select">
+                                                <option value="string">string</option>
+                                                <option value="list">list</option>
+                                                <option value="set">set</option>
+                                                <option value="zset">zset</option>
+                                                <option value="hash">hash</option>
+                                            </select>
+                                        </div>
+                                </div>
+                                <div class="row" style="margin-top: 20px" id="key_name_group">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">key名：</span>
+                                            <input type="text" id="key_name" class="form-control">
+                                        </div>
+                                </div>
+                                <div class="row" style="margin-top: 5px" id="key_field_name_group">
+                                        <div class="input-group"  >
+                                            <span class="input-group-addon">field名：</span>
+                                            <input type="text" id="key_field_name" class="form-control">
+                                        </div>
+                                </div>
+                                <div class="row" style="margin-top: 5px" id="key_score_group">
+                                        <div class="input-group"  >
+                                            <span class="input-group-addon">score：</span>
+                                            <input type="number" id="key_score" class="form-control">
+                                        </div>
+                                </div>
+                                <div class="row" style="margin-top: 5px" id="key_val_group">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">值：</span>
+                                            <input type="text" id="key_val" class="form-control">
+                                        </div>
+                                </div>
+                                <div class="row" style="margin-top: 5px;float: right">
+                                    <p style="display: none;color: #be2924" id="key_save_wran">所有字段不能为空！！！</p>
+                                    <div class="btn-group" style="float: right">
+                                        <button class="btn btn-primary" type="button" id="key_save">保存</button>
+                                        <button type="button" class="btn btn-default" id="key_cancel">取消</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="row" style="margin-top: 20px" id="key_name_group">
-                            <div class="col-md-5">
-                                <div class="input-group">
-                                    <span class="input-group-addon">key名：</span>
-                                    <input type="text" id="key_name" class="form-control">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row" style="margin-top: 5px" id="key_field_name_group">
-                            <div class="col-md-5">
-                                <div class="input-group"  >
-                                    <span class="input-group-addon">field名：</span>
-                                    <input type="text" id="key_field_name" class="form-control">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row" style="margin-top: 5px" id="key_score_group">
-                            <div class="col-md-5">
-                                <div class="input-group"  >
-                                    <span class="input-group-addon">score：</span>
-                                    <input type="number" id="key_score" class="form-control">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row" style="margin-top: 5px" id="key_val_group">
-                            <div class="col-md-5">
-                                <div class="input-group">
-                                    <span class="input-group-addon">值：</span>
-                                    <input type="text" id="key_val" class="form-control">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row" style="margin-top: 5px;float: right">
-                            <p style="display: none;color: #be2924" id="key_save_wran">所有字段不能为空！！！</p>
-                            <div class="btn-group" style="float: right">
-                                <button class="btn btn-primary" type="button" id="key_save">保存</button>
-                                <button type="button" class="btn btn-default" id="key_cancel">取消</button>
-                            </div>
-                        </div>
+
 
                     </div>
                     <div class="panel-body" id="key_table_body">
                         <div class="row">
-                            <input type="hidden" id="oldkey" class="form-control">
-                            <input type="hidden" id="oldttl" class="form-control">
-                            <input type="hidden" id="oldtype" class="form-control">
                             <table id="key_value_table"></table>
                         </div>
 

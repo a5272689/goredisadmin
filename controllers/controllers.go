@@ -293,6 +293,30 @@ func KeysDataPersistAPI(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w,string(jsonresult))
 }
 
+func KeyRenameAPI(w http.ResponseWriter, r *http.Request) {
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	utils.Logger.Println(string(data))
+	jsonob,_:=simplejson.NewJson(data)
+	key,_:=jsonob.Get("key").String()
+	newkey,_:=jsonob.Get("newkey").String()
+	redisstr,_:=jsonob.Get("redis").String()
+	redislist:=strings.Split(redisstr,":")
+	redisport,_:=strconv.Atoi(redislist[1])
+	redis_db,_:=jsonob.Get("redis_db").String()
+	redis_db_index,_:=strconv.Atoi(redis_db)
+	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	del_keys,err:=redisinfo.RenameKey(key,newkey,redis_db_index)
+	result:=new(JsonResult)
+	if err==nil{
+		if del_keys==1{
+			result.Result=true
+		}
+	}
+	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
+
 func KeySaveAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
@@ -302,7 +326,8 @@ func KeySaveAPI(w http.ResponseWriter, r *http.Request) {
 	key,_:=jsonob.Get("key").String()
 	val,_:=jsonob.Get("val").String()
 	field,_:=jsonob.Get("field").String()
-	score,_:=jsonob.Get("score").Int()
+	scorestr,_:=jsonob.Get("score").String()
+	score,_:=strconv.Atoi(scorestr)
 	redisstr,_:=jsonob.Get("redis").String()
 	redislist:=strings.Split(redisstr,":")
 	redisport,_:=strconv.Atoi(redislist[1])
@@ -350,21 +375,28 @@ func KeySaveAPI(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w,string(jsonresult))
 }
 
+
+
 func KeyDataAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	utils.Logger.Println(string(data))
 	jsonob,_:=simplejson.NewJson(data)
 	keystr,_:=jsonob.Get("key").String()
-	key_type,_:=jsonob.Get("type").String()
 	redisstr,_:=jsonob.Get("redis").String()
 	redislist:=strings.Split(redisstr,":")
 	redisport,_:=strconv.Atoi(redislist[1])
 	redis_db,_:=jsonob.Get("redis_db").String()
 	redis_db_index,_:=strconv.Atoi(redis_db)
 	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
-	alldata:=make(map[string][]map[string]string)
-	alldata["rows"]=[]map[string]string{}
+	key_type,err:=redisinfo.TypeKey(keystr,redis_db_index)
+	utils.Logger.Println(key_type,err)
+	key_ttl,err:=redisinfo.TtlKey(keystr,redis_db_index)
+	utils.Logger.Println(key_ttl,err)
+	alldata:=make(map[string]interface{})
+	rows:=[]map[string]string{}
+	alldata["type"]=key_type
+	alldata["ttl"]=key_ttl
 	switch key_type {
 	case "string":
 		val,err:=redisinfo.GetKey(keystr,redis_db_index)
@@ -372,7 +404,7 @@ func KeyDataAPI(w http.ResponseWriter, r *http.Request) {
 		valmap:=make(map[string]string)
 		if err==nil{
 			valmap["val"]=val
-			alldata["rows"]=append(alldata["rows"],valmap)
+			rows=append(rows,valmap)
 
 		}
 	case "hash":
@@ -382,7 +414,7 @@ func KeyDataAPI(w http.ResponseWriter, r *http.Request) {
 				valmap:=make(map[string]string)
 				valmap["val"]=val
 				valmap["field"]=field
-				alldata["rows"]=append(alldata["rows"],valmap)
+				rows=append(rows,valmap)
 			}
 		}
 		utils.Logger.Println(vals)
@@ -393,7 +425,7 @@ func KeyDataAPI(w http.ResponseWriter, r *http.Request) {
 				valmap := make(map[string]string)
 				valmap["val"] = val
 				valmap["index"]=strconv.Itoa(index)
-				alldata["rows"] = append(alldata["rows"], valmap)
+				rows = append(rows, valmap)
 			}
 		}
 		utils.Logger.Println(vals)
@@ -404,17 +436,24 @@ func KeyDataAPI(w http.ResponseWriter, r *http.Request) {
 				valmap := make(map[string]string)
 				valmap["val"] = val
 				valmap["index"]=strconv.Itoa(index)
-				alldata["rows"] = append(alldata["rows"], valmap)
+				rows = append(rows, valmap)
 			}
 		}
 		utils.Logger.Println(vals)
-	//case "zset":
-	//	_,err:=redisinfo.ZaddKey(key,score,val,redis_db_index)
-	//	if err!=nil{
-	//		result.Result=false
-	//		result.Info=fmt.Sprintf("报错：%v",err)
-	//	}
+	case "zset":
+		vals,err:=redisinfo.ZrangeKey(keystr,redis_db_index)
+		if err==nil{
+			for index,val:=range vals {
+				if index%2==0{
+					valmap := make(map[string]string)
+					valmap["val"] = val
+					valmap["score"]=vals[index+1]
+					rows = append(rows, valmap)
+				}
+			}
+		}
 	}
+	alldata["rows"]=rows
 	//redis_db_index,_:=strconv.Atoi(redis_db)
 	//redislist:=strings.Split(redisstr,":")
 	//redisport,_:=strconv.Atoi(redislist[1])
