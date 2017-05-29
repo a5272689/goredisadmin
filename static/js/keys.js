@@ -87,9 +87,15 @@ function writekeyinfo() {
 
 $('#key_value_table').bootstrapTable({});
 function keyvaluetableinit(res) {
+    var newrow=[];
+    for (var index in res.rows){
+        var tmpdata=res.rows[index];
+        tmpdata['rowid']=Number(index);
+        newrow.push(tmpdata)
+    }
     var tabledata={
         striped:true,
-        uniqueId:"id",
+        uniqueId:"rowid",
         // cardView:true,
         pagination:true,
         pageNumber:1,
@@ -143,6 +149,14 @@ function keyvaluetableinit(res) {
             }];
             break;
     }
+    tabledata.columns.push({
+        title: '操作',
+        align:'center',
+        valign: 'middle',
+        formatter:function (value,row,index) {
+            var change='<button type="button" class="btn btn-danger btn-xs" onclick="delkey_val('+index+')">删除</button>';
+            return change
+        }});
     return tabledata
 }
 
@@ -365,3 +379,24 @@ $('#rename_key_name').click(function () {
         }
     });
 });
+
+
+function delkey_val(index) {
+    var row=$('#key_value_table').bootstrapTable("getRowByUniqueId",index);
+    row["key"]=$.trim($('#key_name').val());
+    row["redis"]=$('#redis_select').val();
+    row["redis_db"]=$('#redis_db_select').val();
+    row["type"]=$('#key_type_select').val();
+    $.ajax({
+        url:"/keyvaldel",
+        type: "post",
+        data:JSON.stringify(row),
+        // traditional:true,
+        contentType: "application/json",
+        dataType:'json',
+        success:function (res) {
+            $('#keystable').bootstrapTable("refresh",{});
+            $('#keys_body_row').hide();
+        }
+    });
+}

@@ -317,6 +317,51 @@ func KeyRenameAPI(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w,string(jsonresult))
 }
 
+func KeyValDelAPI(w http.ResponseWriter, r *http.Request) {
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	utils.Logger.Println(string(data))
+	jsonob,_:=simplejson.NewJson(data)
+	key,_:=jsonob.Get("key").String()
+	key_type,_:=jsonob.Get("type").String()
+	redisstr,_:=jsonob.Get("redis").String()
+	field,_:=jsonob.Get("field").String()
+	indexstr,_:=jsonob.Get("index").String()
+	index,_:=strconv.Atoi(indexstr)
+	redislist:=strings.Split(redisstr,":")
+	redisport,_:=strconv.Atoi(redislist[1])
+	redis_db,_:=jsonob.Get("redis_db").String()
+	redis_db_index,_:=strconv.Atoi(redis_db)
+	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	result:=new(JsonResult)
+	switch key_type {
+	case "string":
+		_,err:=redisinfo.DelStrValKey(key,redis_db_index)
+		if err!=nil{
+			result.Result=false
+			result.Info=fmt.Sprintf("报错：%v",err)
+		}
+	case "hash":
+		_,err:=redisinfo.DelHashValKey(key,field,redis_db_index)
+		if err!=nil{
+			result.Result=false
+			result.Info=fmt.Sprintf("报错：%v",err)
+		}
+	case "list":
+		err:=redisinfo.DelListValKey(key,index,redis_db_index)
+		if err!=nil{
+			result.Result=false
+			result.Info=fmt.Sprintf("报错：%v",err)
+		}
+	default:
+		result.Result=false
+		result.Info="不支持的类型"
+	}
+	utils.Logger.Println(key,key_type,redisport,redis_db_index)
+	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
+
 func KeySaveAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()

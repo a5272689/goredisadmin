@@ -379,3 +379,33 @@ func (r *RedisInfo) RenameKey(key,newkey string,dbindex int) (int, error) {
 	redisC.Select(dbindex)
 	return redisC.Renamenx(key,newkey)
 }
+
+func (r *RedisInfo) DelStrValKey(key string,dbindex int) (string, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Select(dbindex)
+	return redisC.Set(key,"")
+}
+
+func (r *RedisInfo) DelHashValKey(key string,field string,dbindex int) (int, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Select(dbindex)
+	return redisC.Hdel(key,field)
+}
+
+func (r *RedisInfo) DelListValKey(key string,index int,dbindex int) (error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Select(dbindex)
+	return redisC.Ldel(key,index)
+}
