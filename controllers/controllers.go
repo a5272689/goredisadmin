@@ -18,7 +18,9 @@ import (
 
 func initconText(r *http.Request) pongo2.Context {
 	session := sessions.GetSession(r)
-	return pongo2.Context{"username":session.Get("user"),"urlpath":r.URL.Path}
+	sentinels_keys,_:=models.Redis.Hkeys("goredisadmin:sentinels:hash")
+	redis_keys,_:=models.Redis.Hkeys("goredisadmin:rediss:hash")
+	return pongo2.Context{"username":session.Get("user"),"urlpath":r.URL.Path,"sentinels":len(sentinels_keys),"redis":len(redis_keys)}
 }
 
 func MainHandler(w http.ResponseWriter, r *http.Request) {
