@@ -326,6 +326,7 @@ func KeyValDelAPI(w http.ResponseWriter, r *http.Request) {
 	key_type,_:=jsonob.Get("type").String()
 	redisstr,_:=jsonob.Get("redis").String()
 	field,_:=jsonob.Get("field").String()
+	member,_:=jsonob.Get("val").String()
 	indexstr,_:=jsonob.Get("index").String()
 	index,_:=strconv.Atoi(indexstr)
 	redislist:=strings.Split(redisstr,":")
@@ -334,6 +335,7 @@ func KeyValDelAPI(w http.ResponseWriter, r *http.Request) {
 	redis_db_index,_:=strconv.Atoi(redis_db)
 	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
 	result:=new(JsonResult)
+	result.Result=true
 	switch key_type {
 	case "string":
 		_,err:=redisinfo.DelStrValKey(key,redis_db_index)
@@ -349,6 +351,18 @@ func KeyValDelAPI(w http.ResponseWriter, r *http.Request) {
 		}
 	case "list":
 		err:=redisinfo.DelListValKey(key,index,redis_db_index)
+		if err!=nil{
+			result.Result=false
+			result.Info=fmt.Sprintf("报错：%v",err)
+		}
+	case "set":
+		_,err:=redisinfo.DelSetValKey(key,member,redis_db_index)
+		if err!=nil{
+			result.Result=false
+			result.Info=fmt.Sprintf("报错：%v",err)
+		}
+	case "zset":
+		_,err:=redisinfo.DelZsetValKey(key,member,redis_db_index)
 		if err!=nil{
 			result.Result=false
 			result.Info=fmt.Sprintf("报错：%v",err)
@@ -371,6 +385,7 @@ func KeySaveAPI(w http.ResponseWriter, r *http.Request) {
 	key,_:=jsonob.Get("key").String()
 	val,_:=jsonob.Get("val").String()
 	field,_:=jsonob.Get("field").String()
+	indexstr,_:=jsonob.Get("index").String()
 	scorestr,_:=jsonob.Get("score").String()
 	score,_:=strconv.Atoi(scorestr)
 	redisstr,_:=jsonob.Get("redis").String()
@@ -395,7 +410,14 @@ func KeySaveAPI(w http.ResponseWriter, r *http.Request) {
 			result.Info=fmt.Sprintf("报错：%v",err)
 		}
 	case "list":
-		_,err:=redisinfo.LpushKey(key,val,redis_db_index)
+		var err error
+		if indexstr==""{
+			_,err=redisinfo.LpushKey(key,val,redis_db_index)
+		}else {
+			index,_:=strconv.Atoi(indexstr)
+			_,err=redisinfo.LsetKey(key,index,val,redis_db_index)
+		}
+
 		if err!=nil{
 			result.Result=false
 			result.Info=fmt.Sprintf("报错：%v",err)
