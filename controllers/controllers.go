@@ -25,7 +25,7 @@ func initconText(r *http.Request) pongo2.Context {
 	if username==nil{
 		username=user
 	}
-	userrole:=session.Get("userrole")
+	userrole:=session.Get("role")
 	if userrole==nil{
 		userrole=""
 	}
@@ -555,7 +555,7 @@ func Login(w http.ResponseWriter, r *http.Request)  {
 	}
 	user:=session.Get("user")
 	if session.Get("user")=="04141"{
-		session.Set("userrole","ops")
+		session.Set("role","ops")
 	}
 	if user==nil{
 		tpl,err:=pongo2.FromFile("views/login.html")
