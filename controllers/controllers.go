@@ -267,10 +267,10 @@ func KeysDataExpireAPI(w http.ResponseWriter, r *http.Request) {
 	redis_db,_:=jsonob.Get("redis_db").String()
 	redis_db_index,_:=strconv.Atoi(redis_db)
 	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
-	del_keys:=redisinfo.ExpireKeys(keyslist,seconds,redis_db_index)
+	expire_keys:=redisinfo.ExpireKeys(keyslist,seconds,redis_db_index)
 	result:=new(JsonResult)
 	result.Result=true
-	result.Info=strings.Join(del_keys,",")
+	result.Info=strings.Join(expire_keys,",")
 	jsonresult,_:=json.Marshal(result)
 	fmt.Fprint(w,string(jsonresult))
 }
@@ -291,10 +291,10 @@ func KeysDataPersistAPI(w http.ResponseWriter, r *http.Request) {
 	redis_db,_:=jsonob.Get("redis_db").String()
 	redis_db_index,_:=strconv.Atoi(redis_db)
 	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
-	del_keys:=redisinfo.PersistKeys(keyslist,redis_db_index)
+	persist_keys:=redisinfo.PersistKeys(keyslist,redis_db_index)
 	result:=new(JsonResult)
 	result.Result=true
-	result.Info=strings.Join(del_keys,",")
+	result.Info=strings.Join(persist_keys,",")
 	jsonresult,_:=json.Marshal(result)
 	fmt.Fprint(w,string(jsonresult))
 }
@@ -312,10 +312,10 @@ func KeyRenameAPI(w http.ResponseWriter, r *http.Request) {
 	redis_db,_:=jsonob.Get("redis_db").String()
 	redis_db_index,_:=strconv.Atoi(redis_db)
 	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
-	del_keys,err:=redisinfo.RenameKey(key,newkey,redis_db_index)
+	renamekeys,err:=redisinfo.RenameKey(key,newkey,redis_db_index)
 	result:=new(JsonResult)
 	if err==nil{
-		if del_keys==1{
+		if renamekeys==1{
 			result.Result=true
 		}
 	}
@@ -527,13 +527,6 @@ func KeyDataAPI(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	alldata["rows"]=rows
-	//redis_db_index,_:=strconv.Atoi(redis_db)
-	//redislist:=strings.Split(redisstr,":")
-	//redisport,_:=strconv.Atoi(redislist[1])
-	//redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
-	//alldata:=new(bootstrapTableKeysData)
-	//alldata.Rows=redisinfo.GetKeys(keysstr,redis_db_index)
-	//alldata.Total=len(alldata.Rows)
 	jsonresult,_:=json.Marshal(alldata)
 	fmt.Fprint(w,string(jsonresult))
 }
