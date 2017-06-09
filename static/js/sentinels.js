@@ -70,8 +70,10 @@ function tableinit() {
                 align:'center',
                 valign: 'middle',
                 formatter:function (value,row,index) {
-                    var change='<button type="button" class="btn btn-danger btn-xs" onclick="delsentinel('+row['id']+')">删除</button>';
-                    return change
+                    if ($('#userrole').val()=="ops") {
+                        var change = '<button type="button" class="btn btn-danger btn-xs"  onclick="delsentinel(' + row['id'] + ')">删除</button>';
+                        return change
+                    }
                 }
             }
         ],
@@ -180,3 +182,11 @@ $('#delselectsentinels').click(function () {
         });
 }
 );
+
+function buttoninit() {
+    if ($('#userrole').val()!="ops"){
+        $('#newsentinel').attr('disabled','disabled');
+        $('#delselectsentinels').attr('disabled','disabled')
+    }
+}
+buttoninit();

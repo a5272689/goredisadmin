@@ -160,9 +160,11 @@ function keyvaluetableinit(res) {
             align:'center',
             valign: 'middle',
             formatter:function (value,row,index) {
-                var change='<button type="button" class="btn btn-primary btn-xs" onclick="editkey_val('+index+')">编辑</button>';
-                change+='<button type="button" class="btn btn-danger btn-xs" onclick="delkey_val('+index+')">删除</button>';
-                return change
+                if ($('#userrole').val()=="ops") {
+                    var change = '<button type="button" class="btn btn-primary btn-xs" onclick="editkey_val(' + index + ')">编辑</button>';
+                    change += '<button type="button" class="btn btn-danger btn-xs" onclick="delkey_val(' + index + ')">删除</button>';
+                    return change
+                }
             }});
     }
 
@@ -443,3 +445,16 @@ function editkey_val(index) {
             break;
     }
 }
+
+function buttoninit() {
+    if ($('#userrole').val()!="ops"){
+        $('#keysdelbutton').attr('disabled','disabled');
+        $('#keysPersistbutton').attr('disabled','disabled');
+        $('#keyssetttlbutton').attr('disabled','disabled');
+        $('#newkey').attr('disabled','disabled');
+        $('#rename_key_name').attr('disabled','disabled');
+        $('#key_save').attr('disabled','disabled');
+        $('#key_cancel').attr('disabled','disabled');
+    }
+}
+buttoninit();

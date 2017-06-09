@@ -20,7 +20,16 @@ func initconText(r *http.Request) pongo2.Context {
 	session := sessions.GetSession(r)
 	sentinels_keys,_:=models.Redis.Hkeys("goredisadmin:sentinels:hash")
 	redis_keys,_:=models.Redis.Hkeys("goredisadmin:rediss:hash")
-	return pongo2.Context{"username":session.Get("user"),"urlpath":r.URL.Path,"sentinels":len(sentinels_keys),"redis":len(redis_keys)}
+	user:=session.Get("user")
+	username:=session.Get("username")
+	if username==nil{
+		username=user
+	}
+	userrole:=session.Get("userrole")
+	if userrole==nil{
+		userrole=""
+	}
+	return pongo2.Context{"username":username,"userrole":userrole,"urlpath":r.URL.Path,"sentinels":len(sentinels_keys),"redis":len(redis_keys)}
 }
 
 func MainHandler(w http.ResponseWriter, r *http.Request) {
@@ -546,7 +555,7 @@ func Login(w http.ResponseWriter, r *http.Request)  {
 	}
 	user:=session.Get("user")
 	if session.Get("user")=="04141"{
-		session.Set("role","ops")
+		session.Set("userrole","ops")
 	}
 	if user==nil{
 		tpl,err:=pongo2.FromFile("views/login.html")

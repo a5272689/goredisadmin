@@ -111,8 +111,10 @@ function tableinit() {
                 valign: 'middle',
                 formatter:function (value,row,index) {
                     var change='<button type="button" class="btn btn-primary btn-xs" onclick="lookredis('+row['id']+')">key操作</button>';
-                    change+='<button type="button" class="btn btn-warning btn-xs" onclick="writeredis('+row['id']+')">修改密码</button>';
-                    change+='<button type="button" class="btn btn-danger btn-xs" onclick="delredis('+row['id']+')">删除</button>';
+                    if ($('#userrole').val()=="ops") {
+                        change += '<button type="button" class="btn btn-warning btn-xs" onclick="writeredis(' + row['id'] + ')">修改密码</button>';
+                        change += '<button type="button" class="btn btn-danger btn-xs" onclick="delredis(' + row['id'] + ')">删除</button>';
+                    }
                     return change
                 }
             }
@@ -232,3 +234,11 @@ $('#delselectrediss').click(function () {
         });
     }
 );
+
+function buttoninit() {
+    if ($('#userrole').val()!="ops"){
+        $('#newredis').attr('disabled','disabled');
+        $('#delselectrediss').attr('disabled','disabled')
+    }
+}
+buttoninit();
