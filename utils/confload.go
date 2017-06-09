@@ -33,7 +33,7 @@ func ConfLoad() (*RedisAdminConf,*RedisConf,*CasConf) {
 	selfpath,_:=filepath.Abs(os.Args[0])
 	basedir,_:=filepath.Split(selfpath)
 	defaultConf:=filepath.Join(basedir,"conf","goredisadmin.ini")
-	//defaultConf="/root/Desktop/gopath/src/goredisadmin/conf/goredisadmin.ini"
+	defaultConf="/root/Desktop/gopath/src/goredisadmin/conf/goredisadmin.ini"
 	cfg, err := ini.Load(defaultConf)
 	if err!=nil{
 		logger.Println(fmt.Sprintf("[info] 加载配置文件：%v失败！！！",defaultConf))
