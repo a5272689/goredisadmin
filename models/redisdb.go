@@ -162,6 +162,41 @@ func  (r *RedisInfo)Del() (bool,error) {
 	}
 }
 
+type RoleInfo struct {
+	Role string
+	Slaves []*RedisInfo
+}
+
+func (r *RedisInfo) GetRoleInfo() (*RoleInfo) {
+
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisC, err, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	roleinfo:=&RoleInfo{}
+	if err!=nil{
+		roleinfo.Role="slave"
+		return roleinfo
+	}
+	ReplicationInfo,_:=redisC.Info("Replication")
+	roleinfo.Role=ReplicationInfo["role"]
+	if roleinfo.Role=="master"{
+		connected_slaves,_:=strconv.Atoi(ReplicationInfo["connected_slaves"])
+
+		for i:=0;i<connected_slaves;i++{
+			tmpRedisInfo:=&RedisInfo{}
+			slaveinfo:=ReplicationInfo[fmt.Sprintf("slave%v",i)]
+			slaveinfoList:=strings.Split(slaveinfo,",")
+			tmpRedisInfo.Hostname=strings.Split(slaveinfoList[0],"=")[1]
+			tmpRedisInfo.Port,_=strconv.Atoi(strings.Split(slaveinfoList[1],"=")[1])
+			roleinfo.Slaves=append(roleinfo.Slaves,tmpRedisInfo)
+		}
+	}
+	return roleinfo
+}
+
+
 type KeysData struct {
 	Key string `json:"key"`
 	//Type string `json:"type"`
