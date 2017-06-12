@@ -21,6 +21,8 @@ type RedisInfo struct {
 	Hostname string `json:"hostname"`
 	Port int `json:"port"`
 	Password string `json:"password"`
+	Mastername string `json:"mastername"`
+	Group string `json:"group"`
 	Hashname string `json:"hashname"`
 }
 
@@ -36,6 +38,8 @@ type RedissData struct {
 	UptimeInDays int `json:"uptime_in_days"`
 	UsedMemoryRss int `json:"used_memory_rss"`
 	Keys int `json:"keys"`
+	Group string `json:"group"`
+	Mastername string `json:"mastername"`
 }
 
 func GetRediss(redisinfos ...RedisInfo) []RedissData {
@@ -49,8 +53,12 @@ func GetRediss(redisinfos ...RedisInfo) []RedissData {
 			if !exists {
 				redisinfo.Save()
 			}else {
+				tmpredisinfo:=&RedisInfo{}
 				redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",redisinfo.Hashname)
-				json.Unmarshal([]byte(redisinfostr),&redisinfo)
+				json.Unmarshal([]byte(redisinfostr),tmpredisinfo)
+				tmpredisinfo.Mastername=redisinfo.Mastername
+				tmpredisinfo.Save()
+				redisinfo=*tmpredisinfo
 			}
 			newredisinfos=append(newredisinfos,redisinfo)
 		}
@@ -90,7 +98,8 @@ func GetRediss(redisinfos ...RedisInfo) []RedissData {
 
 		}
 		rediss = append(rediss, RedissData{Id: id, Hostname: redisinfo.Hostname, Port: redisinfo.Port,UptimeInDays:uptime_in_days,
-			ConnectionStatus:conn, AuthStatus: auth, PingStatus: ping, Version: version, Role: role,UsedMemoryRss:used_memory_rss,Keys:keys})
+			ConnectionStatus:conn, AuthStatus: auth, PingStatus: ping, Version: version, Role: role,UsedMemoryRss:used_memory_rss,Keys:keys,
+			Mastername:redisinfo.Mastername,Group:redisinfo.Group})
 	}
 	return rediss
 }
@@ -139,6 +148,26 @@ func (r *RedisInfo)Save() (result bool,err error) {
 	Redis.Select(0)
 	r.Hashname=GetHashName(r.Hostname,r.Port)
 	jsonstr,err:=json.Marshal(r)
+	if err!=nil{
+		return false,err
+	}
+	_,err=Redis.Hset("goredisadmin:rediss:hash",r.Hashname,string(jsonstr))
+	if err!=nil{
+		return false,err
+	}else {
+		return true,err
+	}
+}
+
+func (r *RedisInfo)ChangePassword() (result bool,err error) {
+	Redis.Select(0)
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	tmpRedisInfo:=&RedisInfo{}
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),tmpRedisInfo)
+	tmpRedisInfo.Password=r.Password
+	utils.Logger.Println("new:",r,"now:",tmpRedisInfo)
+	jsonstr,err:=json.Marshal(tmpRedisInfo)
 	if err!=nil{
 		return false,err
 	}

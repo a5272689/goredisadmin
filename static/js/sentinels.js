@@ -23,16 +23,19 @@ function tableinit() {
             checkbox:true
         }, {
             field: 'id',
+            sortable:true,
             title: 'ID',
             align:'center',
             valign: 'middle'
         }, {
             field: 'hostname',
+            sortable:true,
             title: '主机名(IP)',
             align:'center',
             valign: 'middle'
         }, {
             field: 'port',
+            sortable:true,
             title: '端口',
             align:'center',
             valign: 'middle'
@@ -53,6 +56,12 @@ function tableinit() {
                 }
                 return change
             }
+        },{
+            title: 'mastersforsearch',
+            align:'center',
+            valign: 'middle',
+            visible:false,
+            field: 'mastersforsearch'
         }, {
             title: '连接状态',
             align:'center',
@@ -79,6 +88,9 @@ function tableinit() {
         ],
         responseHandler:function(res) {
             console.log(res.rows);
+            for (var i in res.rows){
+                res.rows[i]['mastersforsearch']=res.rows[i]["masters"].join()
+            }
             return res.rows;
         }
     }
@@ -137,6 +149,7 @@ function lookredis(mastername,id) {
     for (var i in rediss){
         redissstr+="rediss="+rediss[i]["hostname"]+':'+rediss[i]["port"].toString()+"&"
     }
+    redissstr+="mastername="+mastername;
     window.location.href="/rediss?"+redissstr;
     console.log(rediss)
 }

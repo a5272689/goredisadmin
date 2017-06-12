@@ -8,6 +8,7 @@
 <div class="container-fluid">
     <h3 class="page-title">Redis</h3>
     <p style="display: none" id="hiddenpostdata">{{ redissstr }}</p>
+    <input type="hidden" id="hiddenmastername" value="{{ hiddenmastername }}">
     <div class="row" id="tablerow">
         <div class="row" style="margin-left: 5px;margin-bottom: -45px">
             <div class="btn-group">
@@ -27,6 +28,7 @@
 
                 <div class="panel-body">
                     <input type="hidden" id="sentinelid_form">
+                    <input type="hidden" id="savetype" class="form-control">
                     <div class="row" id="hostname_form_row">
                         <div class="form-group">
                             <label for="hostname_form" class="col-sm-3 control-label">主机名(IP)</label>
@@ -34,17 +36,37 @@
                                 <input type="text" id="hostname_form" class="form-control" placeholder="0.0.0.0">
                             </div>
                         </div>
+                        <br>
                     </div>
-                    <br>
+
                     <div class="row" id="port_form_row">
                         <div class="form-group">
                             <label for="port_form" class="col-sm-3 control-label">端口</label>
                             <div class="col-sm-8">
-                                <input type="text" id="port_form" class="form-control" placeholder="0">
+                                <input type="number" id="port_form" class="form-control" placeholder="0">
                             </div>
                         </div>
+                        <br>
                     </div>
-                    <br>
+
+                    <div class="row" id="group_form_row">
+                        <div class="form-group">
+                            <label for="port_form" class="col-sm-3 control-label">分组</label>
+                            <div class="col-sm-8">
+                                <input type="text" id="group_form" class="form-control">
+                            </div>
+                        </div>
+                        <br>
+                    </div>
+                    <div class="row" id="mastername_form_row">
+                        <div class="form-group">
+                            <label for="port_form" class="col-sm-3 control-label">MasterName</label>
+                            <div class="col-sm-8">
+                                <input type="text" id="mastername_form" class="form-control">
+                            </div>
+                        </div>
+                        <br>
+                    </div>
                     <div class="row">
                         <div class="form-group">
                             <label for="password_form" class="col-sm-3 control-label">密码</label>
@@ -52,8 +74,8 @@
                                 <input type="password" id="password_form" class="form-control" placeholder="******">
                             </div>
                         </div>
+                        <br>
                     </div>
-                    <br>
                     <p style="color: #be2924" id="forminfo"></p>
                     <div class="row">
                         <div class="btn-group" style="float: right">

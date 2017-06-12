@@ -19,6 +19,7 @@ function tableinit() {
         url:'/redissdata',
         queryParams:function(params) {
             params["rediss"]=$("#hiddenpostdata").text();
+            params["mastername"]=$("#hiddenmastername").val();
             return params;
         },
         method:'post',
@@ -26,16 +27,19 @@ function tableinit() {
             checkbox:true
         }, {
             field: 'id',
+            sortable:true,
             title: 'ID',
             align:'center',
             valign: 'middle'
         }, {
             field: 'hostname',
+            sortable:true,
             title: '主机名(IP)',
             align:'center',
             valign: 'middle'
         }, {
             field: 'port',
+            sortable:true,
             title: '端口',
             align:'center',
             valign: 'middle'
@@ -44,8 +48,21 @@ function tableinit() {
             title: '版本号',
             align:'center',
             valign: 'middle'
+        },{
+            title: 'MasterName',
+            sortable:true,
+            align:'center',
+            valign: 'middle',
+            field: 'mastername'
+        },{
+            title: '分组',
+            sortable:true,
+            align:'center',
+            valign: 'middle',
+            field: 'group'
         }, {
             title: '角色',
+            sortable:true,
             align:'center',
             valign: 'middle',
             field: 'role'
@@ -120,6 +137,7 @@ function tableinit() {
             }
         ],
         responseHandler:function(res) {
+            console.log(res.rows)
             return res.rows;
         }
     }
@@ -129,10 +147,12 @@ $('#redisssavebutton').click(function () {
     var hostname=$.trim($('#hostname_form').val()),
         port=Number($.trim($('#port_form').val())),
         password=$.trim($('#password_form').val()),
-        senddata={"port":port,"hostname":hostname,"password":password};
+        mastername=$.trim($('#mastername_form').val()),
+        group=$.trim($('#group_form').val()),
+        senddata={"port":port,"hostname":hostname,"password":password,"group":group,"mastername":mastername,"savetype":$('#savetype').val()};
     var $forminfo=$('#forminfo');
     if (port==0||hostname==""){
-        $forminfo.text("所有字段不能为空!!!");
+        $forminfo.text("主机名和端口不能为空!!!");
         $forminfo.show();
         return
     }
@@ -165,6 +185,7 @@ $('#redisscancelbutton').click(function () {
 
 $('#newredis').click(function () {
     forminit();
+    $('#savetype').val("new");
     $('#tablerow').hide();
     $('#formrow').show();
 });
@@ -179,12 +200,17 @@ function writeredis(id) {
     $('#forminfo').hide();
     $('#tablerow').hide();
     $('#formrow').show();
+    $('#mastername_form_row').hide();
+    $('#group_form_row').hide();
+    $('#savetype').val("changepassword");
 }
 
 function forminit(data) {
     $('#form_title').text("新建redis");
     $('#hostname_form_row').show();
     $('#port_form_row').show();
+    $('#mastername_form_row').show();
+    $('#group_form_row').show();
     $('#forminfo').hide()
 }
 

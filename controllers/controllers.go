@@ -108,14 +108,12 @@ func SentinelsDataDelAPI(w http.ResponseWriter, r *http.Request) {
 
 
 func Rediss(w http.ResponseWriter, r *http.Request) {
-	session := sessions.GetSession(r)
 	r.ParseForm()
 	redissstr:=strings.Join(r.Form["rediss"],"^")
 	tpl,err:=pongo2.FromFile("views/contents/rediss.html")
 	tpl = pongo2.Must(tpl,err)
-	fmt.Println(session.Get("user"))
 	context:=initconText(r)
-	context.Update(pongo2.Context{"redissstr":redissstr})
+	context.Update(pongo2.Context{"redissstr":redissstr,"hiddenmastername":r.Form.Get("mastername")})
 	tpl.ExecuteWriter(context, w)
 }
 
@@ -132,6 +130,7 @@ func RedissDataAPI(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	jsonob,_:=simplejson.NewJson(data)
 	redissstr,_:=jsonob.Get("rediss").String()
+	mastername,_:=jsonob.Get("mastername").String()
 	redisslist:=strings.Split(redissstr,"^")
 	redisinfoslist:=[]models.RedisInfo{}
 	for _,redisstr:=range redisslist{
@@ -141,7 +140,12 @@ func RedissDataAPI(w http.ResponseWriter, r *http.Request) {
 			if err!=nil{
 				continue
 			}
-			redisinfoslist=append(redisinfoslist,models.RedisInfo{Hostname:redislist[0],Port:redisport})
+			if mastername!=""{
+				redisinfoslist=append(redisinfoslist,models.RedisInfo{Hostname:redislist[0],Port:redisport,Mastername:mastername})
+			}else {
+				redisinfoslist=append(redisinfoslist,models.RedisInfo{Hostname:redislist[0],Port:redisport})
+			}
+
 		}
 	}
 	alldata:=new(bootstrapTableRedissData)
@@ -158,11 +162,20 @@ func RedissDataChangeAPI(w http.ResponseWriter, r *http.Request) {
 	hostname:=r.PostForm.Get("hostname")
 	port,_:=strconv.Atoi(r.PostForm.Get("port"))
 	password:=r.PostForm.Get("password")
-	utils.Logger.Printf("[info] RedissDataChangeAPI 收到参数：hostname:%v,port:%v,password:%v",hostname,port,password)
-	redis:=&models.RedisInfo{Hostname:hostname,Port:port,Password:password}
-	saveresult,err:=redis.Save()
-	result.Result=saveresult
-	result.Info=fmt.Sprintf("报错：%v",err)
+	mastername:=r.PostForm.Get("mastername")
+	group:=r.PostForm.Get("group")
+	savetype:=r.PostForm.Get("savetype")
+	utils.Logger.Printf("[info] RedissDataChangeAPI 收到参数：hostname:%v,port:%v,password:%v,mastername:%v,group:%v",hostname,port,password,mastername,group)
+	redis:=&models.RedisInfo{Hostname:hostname,Port:port,Mastername:mastername,Password:password,Group:group}
+	var err error
+	if savetype=="changepassword"{
+		result.Result,err=redis.ChangePassword()
+	}else {
+		result.Result,err=redis.Save()
+	}
+	if err!=nil{
+		utils.Logger.Println("[info] 保存报错：",err)
+	}
 	jsonresult,_:=json.Marshal(result)
 	strjsonresult:=string(jsonresult)
 	utils.Logger.Printf("[info] RedissDataChangeAPI 结果：%v",strjsonresult)
