@@ -244,7 +244,11 @@ func KeysDataAPI(w http.ResponseWriter, r *http.Request) {
 		redisinfo=*roleinfo.Slaves[0]
 	}
 	alldata:=new(bootstrapTableKeysData)
-	alldata.Rows=redisinfo.GetKeys(keysstr,redis_db_index)
+	session := sessions.GetSession(r)
+	userrole:=session.Get("role")
+	if userrole=="ops"||keysstr!="*"{
+		alldata.Rows=redisinfo.GetKeys(keysstr,redis_db_index)
+	}
 	alldata.Total=len(alldata.Rows)
 	jsonresult,_:=json.Marshal(alldata)
 	fmt.Fprint(w,string(jsonresult))
