@@ -180,6 +180,27 @@ func (r *RedisInfo)ChangePassword() (result bool,err error) {
 }
 
 
+func (r *RedisInfo)Change() (result bool,err error) {
+	Redis.Select(0)
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	tmpRedisInfo:=&RedisInfo{}
+	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),tmpRedisInfo)
+	tmpRedisInfo.Mastername=r.Mastername
+	tmpRedisInfo.Group=r.Group
+	utils.Logger.Println("new:",r,"now:",tmpRedisInfo)
+	jsonstr,err:=json.Marshal(tmpRedisInfo)
+	if err!=nil{
+		return false,err
+	}
+	_,err=Redis.Hset("goredisadmin:rediss:hash",r.Hashname,string(jsonstr))
+	if err!=nil{
+		return false,err
+	}else {
+		return true,err
+	}
+}
+
 func  (r *RedisInfo)Del() (bool,error) {
 	Redis.Select(0)
 	r.Hashname=GetHashName(r.Hostname,r.Port)

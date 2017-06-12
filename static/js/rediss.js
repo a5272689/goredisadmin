@@ -129,6 +129,7 @@ function tableinit() {
                 formatter:function (value,row,index) {
                     var change='<button type="button" class="btn btn-primary btn-xs" onclick="lookredis('+row['id']+')">key操作</button>';
                     if ($('#userrole').val()=="ops") {
+                        change += '<button type="button" class="btn btn-info btn-xs" onclick="changeredis(' + row['id'] + ')">信息修改</button>';
                         change += '<button type="button" class="btn btn-warning btn-xs" onclick="writeredis(' + row['id'] + ')">修改密码</button>';
                         change += '<button type="button" class="btn btn-danger btn-xs" onclick="delredis(' + row['id'] + ')">删除</button>';
                     }
@@ -204,6 +205,22 @@ function writeredis(id) {
     $('#group_form_row').hide();
     $('#savetype').val("changepassword");
 }
+
+function changeredis(id) {
+    var rowdata=$('#redisstable').bootstrapTable('getRowByUniqueId',id);
+    $('#form_title').text("修改redis密码");
+    $('#hostname_form_row').hide();
+    $('#hostname_form').val(rowdata.hostname);
+    $('#port_form_row').hide();
+    $('#port_form').val(rowdata.port);
+    $('#mastername_form').val(rowdata.mastername);
+    $('#group_form').val(rowdata.group);
+    $('#forminfo').hide();
+    $('#tablerow').hide();
+    $('#formrow').show();
+    $('#savetype').val("change");
+}
+
 
 function forminit(data) {
     $('#form_title').text("新建redis");

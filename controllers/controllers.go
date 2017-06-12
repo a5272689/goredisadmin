@@ -170,7 +170,9 @@ func RedissDataChangeAPI(w http.ResponseWriter, r *http.Request) {
 	var err error
 	if savetype=="changepassword"{
 		result.Result,err=redis.ChangePassword()
-	}else {
+	}else if savetype=="change"{
+		result.Result,err=redis.Change()
+	} else {
 		result.Result,err=redis.Save()
 	}
 	if err!=nil{
