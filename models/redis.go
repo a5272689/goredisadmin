@@ -6,6 +6,7 @@ import (
 	"errors"
 	"goredisadmin/utils"
 	"strconv"
+	"time"
 )
 
 func NewRedis(host string,port int,passwd string) (client *redis.Client,err error,conn,auth,ping bool)  {
@@ -57,4 +58,25 @@ func CheckredisResult(result string,err error) (error) {
 		return errors.New(result)
 	}
 	return nil
+}
+
+func CheckRedis()  {
+	defer  func() {
+		if x := recover(); x != nil {
+			utils.Logger.Println("直连redis连接失败，重新连接！！！")
+			Redis,_,_,_,_=NewRedis(utils.Rc.Host,utils.Rc.Port,utils.Rc.Passwd)
+			CheckRedis()
+		}
+	}()
+	utils.Logger.Println("开始检测！！")
+	for i:=1;i==1;{
+		time.Sleep(time.Second*1)
+		_,err:=Redis.Ping()
+		if err!=nil{
+			utils.Logger.Println("直连redis连接失败，重新连接！！！")
+			Redis,_,_,_,_=NewRedis(utils.Rc.Host,utils.Rc.Port,utils.Rc.Passwd)
+		}
+	}
+
+
 }

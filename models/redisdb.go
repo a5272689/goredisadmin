@@ -263,10 +263,10 @@ func (r *RedisInfo) GetKeys(pattern string,dbindex int) ([]KeysData) {
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, err, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
 	if err!=nil{
 		return keys
 	}
+	redisC.Select(dbindex)
 	keyslist,_:=redisC.Keys(pattern)
 	for _,keyname:=range keyslist{
 		//ttl,_:=redisC.Ttl(keyname)

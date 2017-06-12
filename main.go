@@ -38,6 +38,7 @@ func main() {
 	n.Use(negroni.NewStatic(http.Dir(".")))
 	n.UseHandler(r)
 	listenaddr:=fmt.Sprintf("%v:%v",rac.Listen,rac.Port)
+	go models.CheckRedis()
 	n.Run(listenaddr)
 }
 

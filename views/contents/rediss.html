@@ -6,15 +6,32 @@
 
 {% block content %}
 <div class="container-fluid">
+
     <h3 class="page-title">Redis</h3>
     <p style="display: none" id="hiddenpostdata">{{ redissstr }}</p>
     <input type="hidden" id="hiddenmastername" value="{{ hiddenmastername }}">
     <div class="row" id="tablerow">
         <div class="row" style="margin-left: 5px;margin-bottom: -45px">
-            <div class="btn-group">
-                <button type="button" class="btn btn-success" id="newredis">新建</button>
-                <button type="button" class="btn btn-danger" id="delselectrediss">删除</button>
+            <div class="col-md-2">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-success" id="newredis">新建</button>
+                    <button type="button" class="btn btn-danger" id="delselectrediss">删除</button>
+                </div>
             </div>
+            <div class="col-md-4">
+                <div class="col-md-9">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="keysfindredis_input">
+                        <span class="input-group-btn">
+                            <button class="btn btn-primary" type="button" id="keysfindredis">通过KEY找redis</button>
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-info" id="renew">还原查找</button>
+                </div>
+            </div>
+
         </div>
         <table id="redisstable"></table>
     </div>

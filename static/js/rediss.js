@@ -221,6 +221,32 @@ function changeredis(id) {
     $('#savetype').val("change");
 }
 
+$('#keysfindredis').click(function () {
+    var keysfindredis_val=$('#keysfindredis_input').val();
+    var redislist=$('#redisstable').bootstrapTable('getAllSelections');
+    var newredislist=[];
+    for (var i in redislist){
+        var senddata={"keys":keysfindredis_val,"redis":redislist[i].hostname+':'+redislist[i].port,"redis_db":"0"};
+        console.log(senddata);
+        $.ajax({
+            url:"/keysdata",
+            type: "post",
+            async:false,
+            data:JSON.stringify(senddata),
+            contentType: "application/json",
+            dataType:'json',
+            success:function (res) {
+                if (res.rows.length>0){
+                    newredislist.push(redislist[i])
+                }
+
+            },
+        });
+    }
+    $('#redisstable').bootstrapTable("load",newredislist);
+
+});
+
 
 function forminit(data) {
     $('#form_title').text("新建redis");
@@ -277,6 +303,10 @@ $('#delselectrediss').click(function () {
         });
     }
 );
+
+$('#renew').click(function () {
+    $('#redisstable').bootstrapTable("refresh",{});
+});
 
 function buttoninit() {
     if ($('#userrole').val()!="ops"){
