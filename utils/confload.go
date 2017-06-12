@@ -19,6 +19,7 @@ type RedisConf struct {
 type CasConf struct {
 	CasUrl string `ini:"casurl"`
 	RedirectPath  string `ini:"redirectpath"`
+	UserInfoApi string `ini:"userinfoapi"`
 }
 func ConfLoad() (*RedisAdminConf,*RedisConf,*CasConf) {
 	rac := new(RedisAdminConf)

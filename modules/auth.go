@@ -15,7 +15,7 @@ func (a *AuthInfo) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.
 	session := sessions.GetSession(r)
 	if strings.HasPrefix(urlpath,"/login") || strings.HasPrefix(urlpath,"/static") || session.Get("user")!=nil{
 		role:=session.Get("role")
-		if role==nil{
+		if role==nil||role!="ops"{
 			if urlpath=="/sentinelschange"|| urlpath=="/sentinelsdel"||urlpath=="/redisschange"||
 				urlpath=="/redissdel"||urlpath=="/keysdel" ||urlpath=="/keysexpire"||urlpath=="/keyvaldel"||
 				urlpath=="/keyspersist"||urlpath=="/keysave" ||urlpath=="/keyrename"{

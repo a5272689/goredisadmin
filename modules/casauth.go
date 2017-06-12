@@ -6,16 +6,31 @@ import (
 	"net/url"
 	"io/ioutil"
 	"encoding/xml"
+	"encoding/json"
 )
 
 type CasAuthInfo struct {
 	CasUrl string
 	RedirectPath string
+	UserInfoApi string
 	UserName string
 }
 
 type UserXml struct {
 	User string `xml:"authenticationSuccess>user"`
+}
+
+type UserInfoJson struct {
+	Data UserInfoNameJson `json:"data"`
+}
+
+type UserInfoNameJson struct {
+	Name string `json:"name"`
+	Depart UserInfoPNameJson `json:"depart"`
+}
+
+type UserInfoPNameJson struct {
+	Name string `json:"name"`
 }
 
 func (c *CasAuthInfo) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc)()  {
@@ -41,6 +56,17 @@ func (c *CasAuthInfo) ServeHTTP(rw http.ResponseWriter, r *http.Request, next ht
 			a:=url.Values{"service":{"http://"+r.Host+c.RedirectPath}}
 			http.Redirect(rw,r,c.CasUrl+"/logout"+"?"+a.Encode(),http.StatusFound)
 		}else {
+			if c.UserInfoApi!=""&&session.Get("casuser")!=nil{
+				res, _ := http.Get(c.UserInfoApi+"/"+session.Get("casuser").(string));
+				result, _ := ioutil.ReadAll(res.Body)
+				res.Body.Close()
+				userinfo:=&UserInfoJson{}
+				json.Unmarshal(result,userinfo)
+				session.Set("username",userinfo.Data.Name)
+				if userinfo.Data.Depart.Name=="基础运维"{
+					session.Set("role","ops")
+				}
+			}
 			next(rw,r)
 		}
 	}

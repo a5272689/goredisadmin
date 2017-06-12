@@ -31,6 +31,7 @@ func main() {
 		casauth:=new(modules.CasAuthInfo)
 		casauth.CasUrl=cc.CasUrl
 		casauth.RedirectPath=cc.RedirectPath
+		casauth.UserInfoApi=cc.UserInfoApi
 		n.Use(casauth)
 	}
 	n.Use(userauth)

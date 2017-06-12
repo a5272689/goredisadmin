@@ -554,9 +554,6 @@ func Login(w http.ResponseWriter, r *http.Request)  {
 		session.Set("user",casuser)
 	}
 	user:=session.Get("user")
-	if session.Get("user")=="04141"{
-		session.Set("role","ops")
-	}
 	if user==nil{
 		tpl,err:=pongo2.FromFile("views/login.html")
 		tpl = pongo2.Must(tpl,err)
