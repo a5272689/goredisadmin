@@ -165,8 +165,9 @@ func RedissDataChangeAPI(w http.ResponseWriter, r *http.Request) {
 	mastername:=r.PostForm.Get("mastername")
 	group:=r.PostForm.Get("group")
 	savetype:=r.PostForm.Get("savetype")
-	utils.Logger.Printf("[info] RedissDataChangeAPI 收到参数：hostname:%v,port:%v,password:%v,mastername:%v,group:%v",hostname,port,password,mastername,group)
-	redis:=&models.RedisInfo{Hostname:hostname,Port:port,Mastername:mastername,Password:password,Group:group}
+	remark:=r.PostForm.Get("remark")
+	utils.Logger.Printf("[info] RedissDataChangeAPI 收到参数：hostname:%v,port:%v,password:%v,mastername:%v,group:%v,remark:%v",hostname,port,password,mastername,group,remark)
+	redis:=&models.RedisInfo{Hostname:hostname,Port:port,Mastername:mastername,Password:password,Group:group,Remark:remark}
 	var err error
 	if savetype=="changepassword"{
 		result.Result,err=redis.ChangePassword()

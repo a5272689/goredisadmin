@@ -24,6 +24,7 @@ type RedisInfo struct {
 	Mastername string `json:"mastername"`
 	Group string `json:"group"`
 	Hashname string `json:"hashname"`
+	Remark string `json:"remark"`
 }
 
 type RedissData struct {
@@ -40,6 +41,7 @@ type RedissData struct {
 	Keys int `json:"keys"`
 	Group string `json:"group"`
 	Mastername string `json:"mastername"`
+	Remark string `json:"remark"`
 }
 
 func GetRediss(redisinfos ...RedisInfo) []RedissData {
@@ -99,7 +101,7 @@ func GetRediss(redisinfos ...RedisInfo) []RedissData {
 		}
 		rediss = append(rediss, RedissData{Id: id, Hostname: redisinfo.Hostname, Port: redisinfo.Port,UptimeInDays:uptime_in_days,
 			ConnectionStatus:conn, AuthStatus: auth, PingStatus: ping, Version: version, Role: role,UsedMemoryRss:used_memory_rss,Keys:keys,
-			Mastername:redisinfo.Mastername,Group:redisinfo.Group})
+			Mastername:redisinfo.Mastername,Group:redisinfo.Group,Remark:redisinfo.Remark})
 	}
 	return rediss
 }
@@ -188,6 +190,7 @@ func (r *RedisInfo)Change() (result bool,err error) {
 	json.Unmarshal([]byte(redisinfostr),tmpRedisInfo)
 	tmpRedisInfo.Mastername=r.Mastername
 	tmpRedisInfo.Group=r.Group
+	tmpRedisInfo.Remark=r.Remark
 	utils.Logger.Println("new:",r,"now:",tmpRedisInfo)
 	jsonstr,err:=json.Marshal(tmpRedisInfo)
 	if err!=nil{

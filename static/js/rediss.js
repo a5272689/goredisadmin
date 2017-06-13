@@ -123,7 +123,12 @@ function tableinit() {
                 }
                 return change
             }
-        }, {title:'操作',
+        }, {
+            title: '备注',
+            align:'center',
+            valign: 'middle',
+            field: 'remark'
+        },{title:'操作',
                 align:'center',
                 valign: 'middle',
                 formatter:function (value,row,index) {
@@ -150,7 +155,8 @@ $('#redisssavebutton').click(function () {
         password=$.trim($('#password_form').val()),
         mastername=$.trim($('#mastername_form').val()),
         group=$.trim($('#group_form').val()),
-        senddata={"port":port,"hostname":hostname,"password":password,"group":group,"mastername":mastername,"savetype":$('#savetype').val()};
+        remark=$.trim($('#remark_form').val()),
+        senddata={"port":port,"hostname":hostname,"password":password,"group":group,"mastername":mastername,"savetype":$('#savetype').val(),"remark":remark};
     var $forminfo=$('#forminfo');
     if (port==0||hostname==""){
         $forminfo.text("主机名和端口不能为空!!!");
@@ -192,6 +198,7 @@ $('#newredis').click(function () {
 });
 
 function writeredis(id) {
+    forminit();
     var rowdata=$('#redisstable').bootstrapTable('getRowByUniqueId',id);
     $('#form_title').text("修改redis密码");
     $('#hostname_form_row').hide();
@@ -203,18 +210,23 @@ function writeredis(id) {
     $('#formrow').show();
     $('#mastername_form_row').hide();
     $('#group_form_row').hide();
+    $('#remark_form_row').hide();
+    $('#password_form_row').show();
     $('#savetype').val("changepassword");
 }
 
 function changeredis(id) {
+    forminit();
     var rowdata=$('#redisstable').bootstrapTable('getRowByUniqueId',id);
-    $('#form_title').text("修改redis密码");
+    $('#form_title').text("修改信息");
     $('#hostname_form_row').hide();
     $('#hostname_form').val(rowdata.hostname);
     $('#port_form_row').hide();
     $('#port_form').val(rowdata.port);
+    $('#password_form_row').hide();
     $('#mastername_form').val(rowdata.mastername);
     $('#group_form').val(rowdata.group);
+    $('#remark_form').val(rowdata.remark);
     $('#forminfo').hide();
     $('#tablerow').hide();
     $('#formrow').show();
@@ -254,6 +266,8 @@ function forminit(data) {
     $('#port_form_row').show();
     $('#mastername_form_row').show();
     $('#group_form_row').show();
+    $('#remark_form_row').show();
+    $('#password_form_row').show();
     $('#forminfo').hide()
 }
 
