@@ -72,12 +72,13 @@ func SentinelsDataAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func SentinelsDataChangeAPI(w http.ResponseWriter, r *http.Request) {
+	session := sessions.GetSession(r)
 	w.Header().Add("Content-Type","application/json")
 	r.ParseForm()
 	result:=new(JsonResult)
 	hostname:=r.PostForm.Get("hostname")
 	port,_:=strconv.Atoi(r.PostForm.Get("port"))
-	utils.Logger.Printf("[info] SentinelsDataChangeAPI 收到参数：hostname:%v,port:%v",hostname,port)
+	utils.Logger.Printf("[info] SentinelsDataChangeAPI 收到参数：hostname:%v,port:%v,操作用户:%v",hostname,port,session.Get("user"))
 	sentinel:=&models.Sentinel{Hostname:hostname,Port:port}
 	saveresult,err:=sentinel.Create()
 	result.Result=saveresult
@@ -93,7 +94,8 @@ func SentinelsDataDelAPI(w http.ResponseWriter, r *http.Request) {
 	result:=new(JsonResult)
 	result.Result=true
 	data, _ := ioutil.ReadAll(r.Body)
-	utils.Logger.Println("[info] SentinelsDataDelAPI 收到json串：",string(data))
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] SentinelsDataDelAPI 收到json串：%v,操作用户:%v",string(data),session.Get("user"))
 	defer r.Body.Close()
 	var del_sentinels []models.Sentinel
 	json.Unmarshal(data,&del_sentinels)
@@ -166,7 +168,8 @@ func RedissDataChangeAPI(w http.ResponseWriter, r *http.Request) {
 	group:=r.PostForm.Get("group")
 	savetype:=r.PostForm.Get("savetype")
 	remark:=r.PostForm.Get("remark")
-	utils.Logger.Printf("[info] RedissDataChangeAPI 收到参数：hostname:%v,port:%v,password:%v,mastername:%v,group:%v,remark:%v",hostname,port,password,mastername,group,remark)
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] RedissDataChangeAPI 收到参数：hostname:%v,port:%v,password:%v,mastername:%v,group:%v,remark:%v,操作用户:%v",hostname,port,password,mastername,group,remark,session.Get("user"))
 	redis:=&models.RedisInfo{Hostname:hostname,Port:port,Mastername:mastername,Password:password,Group:group,Remark:remark}
 	var err error
 	if savetype=="changepassword"{
@@ -190,7 +193,8 @@ func RedissDataDelAPI(w http.ResponseWriter, r *http.Request) {
 	result:=new(JsonResult)
 	result.Result=true
 	data, _ := ioutil.ReadAll(r.Body)
-	utils.Logger.Println("[info] reddissDataDelAPI 收到json串：",string(data))
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] reddissDataDelAPI 收到json串：%v,操作用户:%v",string(data),session.Get("user"))
 	defer r.Body.Close()
 	var del_rediss []models.RedisInfo
 	json.Unmarshal(data,&del_rediss)
@@ -258,7 +262,8 @@ func KeysDataAPI(w http.ResponseWriter, r *http.Request) {
 func KeysDataDelAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
-	utils.Logger.Println(string(data))
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] KeysDataDelAPI收到json串：%v,操作用户:%v",string(data),session.Get("user"))
 	jsonob,_:=simplejson.NewJson(data)
 	tmpkeyslist,_:=jsonob.Get("keys").Array()
 	keyslist:=[]string{}
@@ -282,7 +287,8 @@ func KeysDataDelAPI(w http.ResponseWriter, r *http.Request) {
 func KeysDataExpireAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
-	utils.Logger.Println(string(data))
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] KeysDataExpireAPI收到json串：%v,操作用户:%v",string(data),session.Get("user"))
 	jsonob,_:=simplejson.NewJson(data)
 	tmpkeyslist,_:=jsonob.Get("keys").Array()
 	keyslist:=[]string{}
@@ -307,7 +313,8 @@ func KeysDataExpireAPI(w http.ResponseWriter, r *http.Request) {
 func KeysDataPersistAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
-	utils.Logger.Println(string(data))
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] KeysDataPersistAPI收到json串：%v,操作用户:%v",string(data),session.Get("user"))
 	jsonob,_:=simplejson.NewJson(data)
 	tmpkeyslist,_:=jsonob.Get("keys").Array()
 	keyslist:=[]string{}
@@ -331,7 +338,8 @@ func KeysDataPersistAPI(w http.ResponseWriter, r *http.Request) {
 func KeyRenameAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
-	utils.Logger.Println(string(data))
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] KeyRenameAPI收到json串：%v,操作用户:%v",string(data),session.Get("user"))
 	jsonob,_:=simplejson.NewJson(data)
 	key,_:=jsonob.Get("key").String()
 	newkey,_:=jsonob.Get("newkey").String()
@@ -355,7 +363,8 @@ func KeyRenameAPI(w http.ResponseWriter, r *http.Request) {
 func KeyValDelAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
-	utils.Logger.Println(string(data))
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] KeyValDelAPI收到json串：%v,操作用户:%v",string(data),session.Get("user"))
 	jsonob,_:=simplejson.NewJson(data)
 	key,_:=jsonob.Get("key").String()
 	key_type,_:=jsonob.Get("type").String()
@@ -414,7 +423,8 @@ func KeyValDelAPI(w http.ResponseWriter, r *http.Request) {
 func KeySaveAPI(w http.ResponseWriter, r *http.Request) {
 	data, _ := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
-	utils.Logger.Println(string(data))
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] KeySaveAPI收到json串：%v,操作用户:%v",string(data),session.Get("user"))
 	jsonob,_:=simplejson.NewJson(data)
 	key_type,_:=jsonob.Get("type").String()
 	key,_:=jsonob.Get("key").String()

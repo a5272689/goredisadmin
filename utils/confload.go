@@ -20,6 +20,7 @@ type CasConf struct {
 	CasUrl string `ini:"casurl"`
 	RedirectPath  string `ini:"redirectpath"`
 	UserInfoApi string `ini:"userinfoapi"`
+	OpenAuth bool `ini:"openauth"`
 }
 func ConfLoad() (*RedisAdminConf,*RedisConf,*CasConf) {
 	rac := new(RedisAdminConf)
@@ -30,6 +31,7 @@ func ConfLoad() (*RedisAdminConf,*RedisConf,*CasConf) {
 	rc.Host="127.0.0.1"
 	cc:=new(CasConf)
 	cc.RedirectPath="/"
+	cc.OpenAuth=false
 	logger:=Logger
 	selfpath,_:=filepath.Abs(os.Args[0])
 	basedir,_:=filepath.Split(selfpath)

@@ -14,6 +14,7 @@ type CasAuthInfo struct {
 	RedirectPath string
 	UserInfoApi string
 	UserName string
+	OpenAuth bool
 }
 
 type UserXml struct {
@@ -63,7 +64,7 @@ func (c *CasAuthInfo) ServeHTTP(rw http.ResponseWriter, r *http.Request, next ht
 				userinfo:=&UserInfoJson{}
 				json.Unmarshal(result,userinfo)
 				session.Set("username",userinfo.Data.Name)
-				if userinfo.Data.Depart.Name=="基础运维"{
+				if userinfo.Data.Depart.Name=="基础运维"||c.OpenAuth{
 					session.Set("role","ops")
 				}
 			}
