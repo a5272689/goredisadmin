@@ -18,8 +18,8 @@ func NewRedis(host string,port int,passwd string) (client *redis.Client,err erro
 			return client,err,true,true,true
 		}
 	}
-
-	client, err = redis.Dial("tcp", fmt.Sprintf("%v:%v",host,port))
+	client, err = redis.DialTimeout("tcp", fmt.Sprintf("%v:%v",host,port),time.Second*2)
+	//client, err = redis.Dial("tcp", fmt.Sprintf("%v:%v",host,port))
 	if err!=nil{
 		utils.Logger.Printf("redis %v:%v 连接失败！！！",host,port)
 		return client,err,conn,auth,ping
