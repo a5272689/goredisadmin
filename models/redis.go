@@ -28,7 +28,7 @@ func GetConnStatus(host string,port int,passwd string,channel  chan ConnStatus) 
 func NewRedis(host string,port int,passwd string) (redisclient *redisClient,err error,conn,auth,ping bool)  {
 	portstr:=strconv.Itoa(port)
 	redisclient=RedisMap[host+portstr]
-	if redisclient.Client!=nil{
+	if redisclient!=nil{
 		redisclient.Lock()
 		result,err:=redisclient.Client.Ping()
 		if result=="PONG"{
@@ -68,7 +68,7 @@ func NewRedis(host string,port int,passwd string) (redisclient *redisClient,err 
 
 type redisClient struct {
 	Client *redis.Client
-	sync.Locker
+	sync.RWMutex
 }
 
 var Redis,_,_,_,_=NewRedis(utils.Rc.Host,utils.Rc.Port,utils.Rc.Passwd)
@@ -88,7 +88,7 @@ func CheckredisResult(result string,err error) (error) {
 func CheckRedis()  {
 	defer  func() {
 		if x := recover(); x != nil {
-			utils.Logger.Println("直连redis连接失败，重新连接！！！")
+			utils.Logger.Println("直连redis连接失败，重新连接！！！",x)
 			Redis,_,_,_,_=NewRedis(utils.Rc.Host,utils.Rc.Port,utils.Rc.Passwd)
 			CheckRedis()
 		}

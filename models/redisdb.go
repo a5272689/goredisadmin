@@ -155,8 +155,7 @@ func GetRedisDbs(rediss []string) (map[string][]string) {
 		tmpport,_:=strconv.Atoi(redislist[1])
 		tmphashname:=GetHashName(redislist[0],tmpport)
 		redisinfo:=&RedisInfo{}
-		redisinfostr,err:=Redis.Client.Hget("goredisadmin:rediss:hash",tmphashname)
-		fmt.Println(err,redisinfostr,redisinfo.Hostname, redisinfo.Port, redisinfo.Password,tmphashname,tmpport,redislist[0])
+		redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",tmphashname)
 		json.Unmarshal([]byte(redisinfostr),redisinfo)
 		redisinfos=append(redisinfos,redisinfo)
 		tmpchannel := make(chan ConnStatus)
