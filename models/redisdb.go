@@ -45,18 +45,20 @@ type RedissData struct {
 }
 
 func GetRediss(redisinfos ...RedisInfo) []RedissData {
-	Redis.Select(0)
+	Redis.Lock()
+	defer Redis.Unlock()
+	Redis.Client.Select(0)
 	rediss:=[]RedissData{}
 	newredisinfos:=[]RedisInfo{}
 	if len(redisinfos)>0{
 		for _,redisinfo:=range redisinfos{
 			redisinfo.Hashname=GetHashName(redisinfo.Hostname,redisinfo.Port)
-			exists,_:=Redis.Hexists("goredisadmin:rediss:hash",redisinfo.Hashname)
+			exists,_:=Redis.Client.Hexists("goredisadmin:rediss:hash",redisinfo.Hashname)
 			if !exists {
 				redisinfo.Save()
 			}else {
 				tmpredisinfo:=&RedisInfo{}
-				redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",redisinfo.Hashname)
+				redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",redisinfo.Hashname)
 				json.Unmarshal([]byte(redisinfostr),tmpredisinfo)
 				tmpredisinfo.Mastername=redisinfo.Mastername
 				tmpredisinfo.Save()
@@ -66,13 +68,13 @@ func GetRediss(redisinfos ...RedisInfo) []RedissData {
 		}
 	}else {
 		utils.Logger.Println("获取所有redis")
-		redisslist,err:=Redis.Hkeys("goredisadmin:rediss:hash")
+		redisslist,err:=Redis.Client.Hkeys("goredisadmin:rediss:hash")
 		if err!=nil{
 			return rediss
 		}
 		for _,tmphashname:=range redisslist{
 			redisinfo:=&RedisInfo{}
-			redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",tmphashname)
+			redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",tmphashname)
 			json.Unmarshal([]byte(redisinfostr),redisinfo)
 			newredisinfos=append(newredisinfos,*redisinfo)
 		}
@@ -91,14 +93,16 @@ func GetRediss(redisinfos ...RedisInfo) []RedissData {
 		var version,role string
 		var uptime_in_days,used_memory_rss,keys int
 		connstatus := <-tmpchannel
+		connstatus.Client.Lock()
+		defer connstatus.Client.Unlock()
 		if connstatus.Err == nil {
-			info, _ := connstatus.Client.Info()
+			info, _ := connstatus.Client.Client.Info()
 			version = info["redis_version"]
 			role = info["role"]
 			uptime_in_days,_ = strconv.Atoi(info["uptime_in_days"])
 			used_memory_rss,_ = strconv.Atoi(info["used_memory_rss"])
 			used_memory_rss=used_memory_rss/8/1024
-			dbsinfo, _ := connstatus.Client.Info("Keyspace")
+			dbsinfo, _ := connstatus.Client.Client.Info("Keyspace")
 			for _,dbinfo:=range dbsinfo{
 				keyinfolist:=strings.Split(dbinfo,",")
 				infolist:=strings.Split(keyinfolist[0],"=")
@@ -121,23 +125,28 @@ func GetRediss(redisinfos ...RedisInfo) []RedissData {
 }
 
 func GetRedisNames() ([]string) {
-	Redis.Select(0)
+	Redis.Lock()
+	defer Redis.Unlock()
+	Redis.Client.Select(0)
 	redis_list:=[]string{}
-	redisslist,err:=Redis.Hkeys("goredisadmin:rediss:hash")
+	redisslist,err:=Redis.Client.Hkeys("goredisadmin:rediss:hash")
 	if err!=nil{
 		return redis_list
 	}
 	for _,tmphashname:=range redisslist{
 		redisinfo:=&RedisInfo{}
-		redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",tmphashname)
+		redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",tmphashname)
 		json.Unmarshal([]byte(redisinfostr),redisinfo)
 		redis_list=append(redis_list,fmt.Sprintf("%v:%v",redisinfo.Hostname,redisinfo.Port))
 	}
+
 	return redis_list
 }
 
 func GetRedisDbs(rediss []string) (map[string][]string) {
-	Redis.Select(0)
+	Redis.Lock()
+	defer Redis.Unlock()
+	Redis.Client.Select(0)
 	redis_db_map:=make(map[string][]string)
 	channels:=[]chan ConnStatus{}
 	redisinfos:=[]*RedisInfo{}
@@ -146,37 +155,44 @@ func GetRedisDbs(rediss []string) (map[string][]string) {
 		tmpport,_:=strconv.Atoi(redislist[1])
 		tmphashname:=GetHashName(redislist[0],tmpport)
 		redisinfo:=&RedisInfo{}
-		redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",tmphashname)
+		redisinfostr,err:=Redis.Client.Hget("goredisadmin:rediss:hash",tmphashname)
+		fmt.Println(err,redisinfostr,redisinfo.Hostname, redisinfo.Port, redisinfo.Password,tmphashname,tmpport,redislist[0])
 		json.Unmarshal([]byte(redisinfostr),redisinfo)
 		redisinfos=append(redisinfos,redisinfo)
 		tmpchannel := make(chan ConnStatus)
+
 		go GetConnStatus(redisinfo.Hostname, redisinfo.Port, redisinfo.Password,tmpchannel)
 		channels=append(channels,tmpchannel)
 	}
 	for i,redisinfo:=range redisinfos{
 		redis:=fmt.Sprintf("%v:%v",redisinfo.Hostname,redisinfo.Port)
 		connstatus := <-channels[i]
+		connstatus.Client.Lock()
+		defer connstatus.Client.Unlock()
 		redis_db_map[redis]=[]string{}
 		if connstatus.Err!=nil{
 			continue
 		}
-		databases_str,_:=connstatus.Client.ConfigGet("databases")
+		databases_str,_:=connstatus.Client.Client.ConfigGet("databases")
 		databases,_:=strconv.Atoi(databases_str["databases"])
 		for dbnum:=0;dbnum<databases;dbnum++{
 			redis_db_map[redis]=append(redis_db_map[redis],strconv.Itoa(dbnum))
 		}
+
 	}
 	return redis_db_map
 }
 
 func (r *RedisInfo)Save() (result bool,err error) {
-	Redis.Select(0)
+	Redis.Lock()
+	defer Redis.Unlock()
+	Redis.Client.Select(0)
 	r.Hashname=GetHashName(r.Hostname,r.Port)
 	jsonstr,err:=json.Marshal(r)
 	if err!=nil{
 		return false,err
 	}
-	_,err=Redis.Hset("goredisadmin:rediss:hash",r.Hashname,string(jsonstr))
+	_,err=Redis.Client.Hset("goredisadmin:rediss:hash",r.Hashname,string(jsonstr))
 	if err!=nil{
 		return false,err
 	}else {
@@ -185,10 +201,12 @@ func (r *RedisInfo)Save() (result bool,err error) {
 }
 
 func (r *RedisInfo)ChangePassword() (result bool,err error) {
-	Redis.Select(0)
+	Redis.Lock()
+	defer Redis.Unlock()
+	Redis.Client.Select(0)
 	r.Hashname=GetHashName(r.Hostname,r.Port)
 	tmpRedisInfo:=&RedisInfo{}
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),tmpRedisInfo)
 	tmpRedisInfo.Password=r.Password
 	utils.Logger.Println("new:",r,"now:",tmpRedisInfo)
@@ -196,7 +214,7 @@ func (r *RedisInfo)ChangePassword() (result bool,err error) {
 	if err!=nil{
 		return false,err
 	}
-	_,err=Redis.Hset("goredisadmin:rediss:hash",r.Hashname,string(jsonstr))
+	_,err=Redis.Client.Hset("goredisadmin:rediss:hash",r.Hashname,string(jsonstr))
 	if err!=nil{
 		return false,err
 	}else {
@@ -206,10 +224,12 @@ func (r *RedisInfo)ChangePassword() (result bool,err error) {
 
 
 func (r *RedisInfo)Change() (result bool,err error) {
-	Redis.Select(0)
+	Redis.Lock()
+	defer Redis.Unlock()
+	Redis.Client.Select(0)
 	r.Hashname=GetHashName(r.Hostname,r.Port)
 	tmpRedisInfo:=&RedisInfo{}
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),tmpRedisInfo)
 	tmpRedisInfo.Mastername=r.Mastername
 	tmpRedisInfo.Group=r.Group
@@ -219,7 +239,7 @@ func (r *RedisInfo)Change() (result bool,err error) {
 	if err!=nil{
 		return false,err
 	}
-	_,err=Redis.Hset("goredisadmin:rediss:hash",r.Hashname,string(jsonstr))
+	_,err=Redis.Client.Hset("goredisadmin:rediss:hash",r.Hashname,string(jsonstr))
 	if err!=nil{
 		return false,err
 	}else {
@@ -228,9 +248,11 @@ func (r *RedisInfo)Change() (result bool,err error) {
 }
 
 func  (r *RedisInfo)Del() (bool,error) {
-	Redis.Select(0)
+	Redis.Lock()
+	defer Redis.Unlock()
+	Redis.Client.Select(0)
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	_,err:=Redis.Hdel("goredisadmin:rediss:hash",r.Hashname)
+	_,err:=Redis.Client.Hdel("goredisadmin:rediss:hash",r.Hashname)
 	if err!=nil{
 		return false,err
 	}else {
@@ -244,9 +266,10 @@ type RoleInfo struct {
 }
 
 func (r *RedisInfo) GetRoleInfo() (*RoleInfo) {
-
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, err, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
@@ -255,7 +278,7 @@ func (r *RedisInfo) GetRoleInfo() (*RoleInfo) {
 		roleinfo.Role="slave"
 		return roleinfo
 	}
-	ReplicationInfo,_:=redisC.Info("Replication")
+	ReplicationInfo,_:=redisC.Client.Info("Replication")
 	roleinfo.Role=ReplicationInfo["role"]
 	if roleinfo.Role=="master"{
 		connected_slaves,_:=strconv.Atoi(ReplicationInfo["connected_slaves"])
@@ -285,15 +308,19 @@ func (r *RedisInfo) GetKeys(pattern string,dbindex int) ([]KeysData) {
 		return keys
 	}
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, err, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
+	redisC.Lock()
+	defer redisC.Unlock()
 	if err!=nil{
 		return keys
 	}
-	redisC.Select(dbindex)
-	keyslist,_:=redisC.Keys(pattern)
+	redisC.Client.Select(dbindex)
+	keyslist,_:=redisC.Client.Keys(pattern)
 	for _,keyname:=range keyslist{
 		//ttl,_:=redisC.Ttl(keyname)
 		//typestr,_:=redisC.Type(keyname)
@@ -306,13 +333,17 @@ func (r *RedisInfo) GetKeys(pattern string,dbindex int) ([]KeysData) {
 func (r *RedisInfo) DelKeys(keyslist []string,dbindex int) ([]string) {
 	var delkeyslist=[]string{}
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
 	for _,keyname:=range keyslist{
-		_,err:=redisC.Del(keyname)
+		_,err:=redisC.Client.Del(keyname)
 		if err==nil{
 			delkeyslist=append(delkeyslist,keyname)
 		}
@@ -324,13 +355,17 @@ func (r *RedisInfo) DelKeys(keyslist []string,dbindex int) ([]string) {
 func (r *RedisInfo) ExpireKeys(keyslist []string,seconds int,dbindex int) ([]string) {
 	var expire_key_list=[]string{}
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
 	for _,keyname:=range keyslist{
-		_,err:=redisC.Expire(keyname,seconds)
+		_,err:=redisC.Client.Expire(keyname,seconds)
 		if err==nil{
 			expire_key_list=append(expire_key_list,keyname)
 		}
@@ -342,13 +377,17 @@ func (r *RedisInfo) ExpireKeys(keyslist []string,seconds int,dbindex int) ([]str
 func (r *RedisInfo) PersistKeys(keyslist []string,dbindex int) ([]string) {
 	var persist_key_list=[]string{}
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
 	for _,keyname:=range keyslist{
-		_,err:=redisC.Persist(keyname)
+		_,err:=redisC.Client.Persist(keyname)
 		if err==nil{
 			persist_key_list=append(persist_key_list,keyname)
 		}
@@ -359,195 +398,271 @@ func (r *RedisInfo) PersistKeys(keyslist []string,dbindex int) ([]string) {
 
 func (r *RedisInfo) SetKey(key,val interface{},dbindex int) (string, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Set(key,val)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Set(key,val)
 }
 
 func (r *RedisInfo) HsetKey(key,field string,value interface{},dbindex int) (int, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Hset(key,field,value)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Hset(key,field,value)
 }
 
 func (r *RedisInfo) LpushKey(key string,value interface{},dbindex int) (int, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Lpush(key,value)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Lpush(key,value)
 }
 
 func (r *RedisInfo) LsetKey(key string,index int,value interface{},dbindex int) (string, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Lset(key,index,value)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Lset(key,index,value)
 }
 
 
 func (r *RedisInfo) SaddKey(key string,value interface{},dbindex int) (int, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Sadd(key,value)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Sadd(key,value)
 }
 
 func (r *RedisInfo) ZaddKey(key string,score int,value interface{},dbindex int) (int, error) {
 	utils.Logger.Println(key,score,value,dbindex)
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Zadd(key,score,value)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Zadd(key,score,value)
 }
 
 func (r *RedisInfo) GetKey(key string,dbindex int) (string, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Get(key)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Get(key)
 }
 
 
 func (r *RedisInfo) HmgetKey(key string,dbindex int) (map[string]string, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Hgetall(key)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Hgetall(key)
 }
 
 
 func (r *RedisInfo) LrangeKey(key string,dbindex int) ([]string, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Lrange(key,0,-1)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Lrange(key,0,-1)
 }
 
 func (r *RedisInfo) SmembersKey(key string,dbindex int) ([]string, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Smembers(key)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Smembers(key)
 }
 
 func (r *RedisInfo) TtlKey(key string,dbindex int) (int, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Ttl(key)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Ttl(key)
 }
 
 func (r *RedisInfo) TypeKey(key string,dbindex int) (string, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Type(key)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Type(key)
 }
 
 
 func (r *RedisInfo) ZrangeKey(key string,dbindex int) ([]string, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Zrange(key,0,-1,true)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Zrange(key,0,-1,true)
 }
 
 func (r *RedisInfo) RenameKey(key,newkey string,dbindex int) (int, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Renamenx(key,newkey)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Renamenx(key,newkey)
 }
 
 func (r *RedisInfo) DelStrValKey(key string,dbindex int) (string, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Set(key,"")
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Set(key,"")
 }
 
 func (r *RedisInfo) DelHashValKey(key string,field string,dbindex int) (int, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Hdel(key,field)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Hdel(key,field)
 }
 
 func (r *RedisInfo) DelListValKey(key string,index int,dbindex int) (error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Ldel(key,index)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Ldel(key,index)
 }
 
 func (r *RedisInfo) DelSetValKey(key,member string,dbindex int) (int,error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Srem(key,member)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Srem(key,member)
 }
 
 func (r *RedisInfo) DelZsetValKey(key,member string,dbindex int) (int,error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
-	redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",r.Hashname)
+	Redis.Lock()
+	defer Redis.Unlock()
+	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
 	json.Unmarshal([]byte(redisinfostr),r)
 	utils.Logger.Println(r)
 	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-	redisC.Select(dbindex)
-	return redisC.Zrem(key,member)
+	redisC.Lock()
+	defer redisC.Unlock()
+	redisC.Client.Select(dbindex)
+	return redisC.Client.Zrem(key,member)
 }

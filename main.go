@@ -16,7 +16,7 @@ import (
 
 
 func main() {
-	defer models.Redis.Close()
+	//defer models.Redis.Client.Close()
 	r:= routers.Urls()
 	n := negroni.Classic()
 	rac,rc,cc:=utils.Rac,utils.Rc,utils.Cc

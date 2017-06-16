@@ -24,13 +24,15 @@ func  (s *Sentinel)GetHashName() (string) {
 
 
 func  (s *Sentinel)Create() (bool,error) {
-	Redis.Select(0)
+	Redis.Lock()
+	defer Redis.Unlock()
+	Redis.Client.Select(0)
 	s.GetHashName()
 	jsonstr,err:=json.Marshal(s)
 	if err!=nil{
 		return false,err
 	}
-	_,err=Redis.Hset("goredisadmin:sentinels:hash",s.Hashname,string(jsonstr))
+	_,err=Redis.Client.Hset("goredisadmin:sentinels:hash",s.Hashname,string(jsonstr))
 	if err!=nil{
 		return false,err
 	}else {
@@ -39,9 +41,11 @@ func  (s *Sentinel)Create() (bool,error) {
 }
 
 func  (s *Sentinel)Del() (bool,error) {
-	Redis.Select(0)
+	Redis.Lock()
+	defer Redis.Unlock()
+	Redis.Client.Select(0)
 	s.GetHashName()
-	_,err:=Redis.Hdel("goredisadmin:sentinels:hash",s.Hashname)
+	_,err:=Redis.Client.Hdel("goredisadmin:sentinels:hash",s.Hashname)
 	if err!=nil{
 		return false,err
 	}else {
@@ -61,16 +65,18 @@ type SentinelsData struct {
 }
 
 func GetSentinels() []SentinelsData{
-	Redis.Select(0)
+	Redis.Lock()
+	defer Redis.Unlock()
+	Redis.Client.Select(0)
 	sentinels:=[]SentinelsData{}
 	channels:=[]chan ConnStatus{}
-	sentinelslist,err:=Redis.Hkeys("goredisadmin:sentinels:hash")
+	sentinelslist,err:=Redis.Client.Hkeys("goredisadmin:sentinels:hash")
 	if err!=nil{
 		return sentinels
 	}
 
 	for id,sentinelHashName:=range sentinelslist{
-		sentinelinfo,_:=Redis.Hget("goredisadmin:sentinels:hash",sentinelHashName)
+		sentinelinfo,_:=Redis.Client.Hget("goredisadmin:sentinels:hash",sentinelHashName)
 		tmpsentinel:=&Sentinel{}
 		json.Unmarshal([]byte(sentinelinfo),tmpsentinel)
 		tmpchannel := make(chan ConnStatus)
@@ -84,20 +90,22 @@ func GetSentinels() []SentinelsData{
 		masterrediss:=make(map[string][]map[string]string)
 		var version string
 		connstatus := <-tmpchannel
+		connstatus.Client.Lock()
+		defer connstatus.Client.Unlock()
 		if connstatus.Err==nil{
-			mastersinfo,_:=connstatus.Client.Masters()
+			mastersinfo,_:=connstatus.Client.Client.Masters()
 			for _,masterinfo:=range mastersinfo{
 				masters=append(masters,masterinfo["name"])
 				mastermaster:=map[string]string{"hostname":masterinfo["ip"],"port":masterinfo["port"]}
 				redissinfo:=[]map[string]string{mastermaster}
-				slavesinfo,_:=connstatus.Client.Slaves(masterinfo["name"])
+				slavesinfo,_:=connstatus.Client.Client.Slaves(masterinfo["name"])
 				for _,slaveinfo:=range slavesinfo{
 					tmpinfo:=map[string]string{"hostname":slaveinfo["ip"],"port":slaveinfo["port"]}
 					redissinfo=append(redissinfo,tmpinfo)
 				}
 				masterrediss[masterinfo["name"]]=redissinfo
 			}
-			info,_:=connstatus.Client.Info("Server")
+			info,_:=connstatus.Client.Client.Info("Server")
 			version=info["redis_version"]
 		}
 		sentinels[i].Version=version

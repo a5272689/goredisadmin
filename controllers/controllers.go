@@ -18,8 +18,10 @@ import (
 
 func initconText(r *http.Request) pongo2.Context {
 	session := sessions.GetSession(r)
-	sentinels_keys,_:=models.Redis.Hkeys("goredisadmin:sentinels:hash")
-	redis_keys,_:=models.Redis.Hkeys("goredisadmin:rediss:hash")
+	models.Redis.Lock()
+	defer models.Redis.Unlock()
+	sentinels_keys,_:=models.Redis.Client.Hkeys("goredisadmin:sentinels:hash")
+	redis_keys,_:=models.Redis.Client.Hkeys("goredisadmin:rediss:hash")
 	user:=session.Get("user")
 	username:=session.Get("username")
 	if username==nil{
