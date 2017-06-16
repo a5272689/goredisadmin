@@ -139,6 +139,8 @@ func GetRedisNames() ([]string) {
 func GetRedisDbs(rediss []string) (map[string][]string) {
 	Redis.Select(0)
 	redis_db_map:=make(map[string][]string)
+	channels:=[]chan ConnStatus{}
+	redisinfos:=[]*RedisInfo{}
 	for _,redis:=range rediss{
 		redislist:=strings.Split(redis,":")
 		tmpport,_:=strconv.Atoi(redislist[1])
@@ -146,12 +148,19 @@ func GetRedisDbs(rediss []string) (map[string][]string) {
 		redisinfo:=&RedisInfo{}
 		redisinfostr,_:=Redis.Hget("goredisadmin:rediss:hash",tmphashname)
 		json.Unmarshal([]byte(redisinfostr),redisinfo)
-		tmp_redis_obj,err,_,_,_:=NewRedis(redisinfo.Hostname,redisinfo.Port,redisinfo.Password)
+		redisinfos=append(redisinfos,redisinfo)
+		tmpchannel := make(chan ConnStatus)
+		go GetConnStatus(redisinfo.Hostname, redisinfo.Port, redisinfo.Password,tmpchannel)
+		channels=append(channels,tmpchannel)
+	}
+	for i,redisinfo:=range redisinfos{
+		redis:=fmt.Sprintf("%v:%v",redisinfo.Hostname,redisinfo.Port)
+		connstatus := <-channels[i]
 		redis_db_map[redis]=[]string{}
-		if err!=nil{
+		if connstatus.Err!=nil{
 			continue
 		}
-		databases_str,_:=tmp_redis_obj.ConfigGet("databases")
+		databases_str,_:=connstatus.Client.ConfigGet("databases")
 		databases,_:=strconv.Atoi(databases_str["databases"])
 		for dbnum:=0;dbnum<databases;dbnum++{
 			redis_db_map[redis]=append(redis_db_map[redis],strconv.Itoa(dbnum))
