@@ -63,38 +63,50 @@ type SentinelsData struct {
 func GetSentinels() []SentinelsData{
 	Redis.Select(0)
 	sentinels:=[]SentinelsData{}
+	channels:=[]chan ConnStatus{}
 	sentinelslist,err:=Redis.Hkeys("goredisadmin:sentinels:hash")
 	if err!=nil{
 		return sentinels
 	}
+
 	for id,sentinelHashName:=range sentinelslist{
 		sentinelinfo,_:=Redis.Hget("goredisadmin:sentinels:hash",sentinelHashName)
 		tmpsentinel:=&Sentinel{}
+		json.Unmarshal([]byte(sentinelinfo),tmpsentinel)
+		tmpchannel := make(chan ConnStatus)
+		go GetConnStatus(tmpsentinel.Hostname,tmpsentinel.Port,"",tmpchannel)
+		channels=append(channels,tmpchannel)
+		sentinel:=SentinelsData{Id:id,Hostname:tmpsentinel.Hostname,Port:tmpsentinel.Port}
+		sentinels=append(sentinels,sentinel)
+	}
+	for i,tmpchannel:=range channels{
 		masters:=[]string{}
 		masterrediss:=make(map[string][]map[string]string)
 		var version string
-		json.Unmarshal([]byte(sentinelinfo),tmpsentinel)
-		sentinelC,err,_,_,ping:=NewRedis(tmpsentinel.Hostname,tmpsentinel.Port,"")
-		if err==nil{
-			mastersinfo,_:=sentinelC.Masters()
+		connstatus := <-tmpchannel
+		if connstatus.Err==nil{
+			mastersinfo,_:=connstatus.Client.Masters()
 			for _,masterinfo:=range mastersinfo{
 				masters=append(masters,masterinfo["name"])
 				mastermaster:=map[string]string{"hostname":masterinfo["ip"],"port":masterinfo["port"]}
 				redissinfo:=[]map[string]string{mastermaster}
-				slavesinfo,_:=sentinelC.Slaves(masterinfo["name"])
+				slavesinfo,_:=connstatus.Client.Slaves(masterinfo["name"])
 				for _,slaveinfo:=range slavesinfo{
 					tmpinfo:=map[string]string{"hostname":slaveinfo["ip"],"port":slaveinfo["port"]}
 					redissinfo=append(redissinfo,tmpinfo)
 				}
 				masterrediss[masterinfo["name"]]=redissinfo
 			}
-			info,_:=sentinelC.Info("Server")
+			info,_:=connstatus.Client.Info("Server")
 			version=info["redis_version"]
 		}
-		sentinel:=SentinelsData{Id:id,Hostname:tmpsentinel.Hostname,Port:tmpsentinel.Port,Version:version,
-			Masters:masters,ConnectionStatus:ping,MasterRediss:masterrediss}
-		sentinels=append(sentinels,sentinel)
+		sentinels[i].Version=version
+		sentinels[i].Masters=masters
+		sentinels[i].ConnectionStatus=connstatus.Ping
+		sentinels[i].MasterRediss=masterrediss
 	}
+
 	return sentinels
 }
+
 

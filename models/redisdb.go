@@ -77,20 +77,28 @@ func GetRediss(redisinfos ...RedisInfo) []RedissData {
 			newredisinfos=append(newredisinfos,*redisinfo)
 		}
 	}
+	channels:=[]chan ConnStatus{}
 	for id,redisinfo:=range newredisinfos {
 		redisinfojson,_:=json.Marshal(redisinfo)
 		utils.Logger.Println(string(redisinfojson))
-		redisC, err, conn, auth, ping := NewRedis(redisinfo.Hostname, redisinfo.Port, redisinfo.Password)
+		tmpchannel := make(chan ConnStatus)
+		go GetConnStatus(redisinfo.Hostname, redisinfo.Port, redisinfo.Password,tmpchannel)
+		channels=append(channels,tmpchannel)
+		rediss = append(rediss, RedissData{Id: id, Hostname: redisinfo.Hostname, Port: redisinfo.Port,
+			Mastername:redisinfo.Mastername,Group:redisinfo.Group,Remark:redisinfo.Remark})
+	}
+	for i,tmpchannel:=range channels{
 		var version,role string
 		var uptime_in_days,used_memory_rss,keys int
-		if err == nil {
-			info, _ := redisC.Info()
+		connstatus := <-tmpchannel
+		if connstatus.Err == nil {
+			info, _ := connstatus.Client.Info()
 			version = info["redis_version"]
 			role = info["role"]
 			uptime_in_days,_ = strconv.Atoi(info["uptime_in_days"])
-			used_memory_rss,err = strconv.Atoi(info["used_memory_rss"])
+			used_memory_rss,_ = strconv.Atoi(info["used_memory_rss"])
 			used_memory_rss=used_memory_rss/8/1024
-			dbsinfo, _ := redisC.Info("Keyspace")
+			dbsinfo, _ := connstatus.Client.Info("Keyspace")
 			for _,dbinfo:=range dbsinfo{
 				keyinfolist:=strings.Split(dbinfo,",")
 				infolist:=strings.Split(keyinfolist[0],"=")
@@ -99,9 +107,15 @@ func GetRediss(redisinfos ...RedisInfo) []RedissData {
 			}
 
 		}
-		rediss = append(rediss, RedissData{Id: id, Hostname: redisinfo.Hostname, Port: redisinfo.Port,UptimeInDays:uptime_in_days,
-			ConnectionStatus:conn, AuthStatus: auth, PingStatus: ping, Version: version, Role: role,UsedMemoryRss:used_memory_rss,Keys:keys,
-			Mastername:redisinfo.Mastername,Group:redisinfo.Group,Remark:redisinfo.Remark})
+		rediss[i].UptimeInDays=uptime_in_days
+		rediss[i].ConnectionStatus=connstatus.Conn
+		rediss[i].AuthStatus=connstatus.Auth
+		rediss[i].PingStatus=connstatus.Ping
+		rediss[i].Version=version
+		rediss[i].Role=role
+		rediss[i].UsedMemoryRss=used_memory_rss
+		rediss[i].Keys=keys
+
 	}
 	return rediss
 }

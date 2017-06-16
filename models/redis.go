@@ -9,6 +9,20 @@ import (
 	"time"
 )
 
+type ConnStatus struct {
+	Client *redis.Client
+	Err error
+	Conn bool
+	Auth bool
+	Ping bool
+}
+
+func GetConnStatus(host string,port int,passwd string,channel  chan ConnStatus)  {
+	sentinelC,err,conn,auth,ping:=NewRedis(host,port,passwd)
+	connstatus:=ConnStatus{Client:sentinelC,Err:err,Conn:conn,Auth:auth,Ping:ping}
+	channel <- connstatus
+}
+
 func NewRedis(host string,port int,passwd string) (client *redis.Client,err error,conn,auth,ping bool)  {
 	portstr:=strconv.Itoa(port)
 	client=RedisMap[host+portstr]
