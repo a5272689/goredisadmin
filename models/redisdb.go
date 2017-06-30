@@ -46,7 +46,6 @@ type RedissData struct {
 
 func GetRediss(redisinfos ...RedisInfo) []RedissData {
 	Redis.Lock()
-	defer Redis.Unlock()
 	Redis.Client.Select(0)
 	rediss:=[]RedissData{}
 	newredisinfos:=[]RedisInfo{}
@@ -55,13 +54,17 @@ func GetRediss(redisinfos ...RedisInfo) []RedissData {
 			redisinfo.Hashname=GetHashName(redisinfo.Hostname,redisinfo.Port)
 			exists,_:=Redis.Client.Hexists("goredisadmin:rediss:hash",redisinfo.Hashname)
 			if !exists {
+				Redis.Unlock()
 				redisinfo.Save()
+				Redis.Lock()
 			}else {
 				tmpredisinfo:=&RedisInfo{}
 				redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",redisinfo.Hashname)
 				json.Unmarshal([]byte(redisinfostr),tmpredisinfo)
 				tmpredisinfo.Mastername=redisinfo.Mastername
+				Redis.Unlock()
 				tmpredisinfo.Save()
+				Redis.Lock()
 				redisinfo=*tmpredisinfo
 			}
 			newredisinfos=append(newredisinfos,redisinfo)
@@ -120,6 +123,7 @@ func GetRediss(redisinfos ...RedisInfo) []RedissData {
 		rediss[i].Keys=keys
 		connstatus.Client.Unlock()
 	}
+	Redis.Unlock()
 	return rediss
 }
 
