@@ -91,7 +91,6 @@ func GetSentinels() []SentinelsData{
 		var version string
 		connstatus := <-tmpchannel
 		connstatus.Client.Lock()
-		defer connstatus.Client.Unlock()
 		if connstatus.Err==nil{
 			mastersinfo,_:=connstatus.Client.Client.Masters()
 			for _,masterinfo:=range mastersinfo{
@@ -112,6 +111,7 @@ func GetSentinels() []SentinelsData{
 		sentinels[i].Masters=masters
 		sentinels[i].ConnectionStatus=connstatus.Ping
 		sentinels[i].MasterRediss=masterrediss
+		connstatus.Client.Unlock()
 	}
 
 	return sentinels

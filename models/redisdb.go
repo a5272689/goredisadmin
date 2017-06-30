@@ -94,7 +94,6 @@ func GetRediss(redisinfos ...RedisInfo) []RedissData {
 		var uptime_in_days,used_memory_rss,keys int
 		connstatus := <-tmpchannel
 		connstatus.Client.Lock()
-		defer connstatus.Client.Unlock()
 		if connstatus.Err == nil {
 			info, _ := connstatus.Client.Client.Info()
 			version = info["redis_version"]
@@ -119,7 +118,7 @@ func GetRediss(redisinfos ...RedisInfo) []RedissData {
 		rediss[i].Role=role
 		rediss[i].UsedMemoryRss=used_memory_rss
 		rediss[i].Keys=keys
-
+		connstatus.Client.Unlock()
 	}
 	return rediss
 }
