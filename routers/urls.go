@@ -23,7 +23,7 @@ func Urls() *mux.Router  {
 	r.HandleFunc("/keysexpire", controllers.KeysDataExpireAPI)
 	r.HandleFunc("/keyspersist", controllers.KeysDataPersistAPI)
 	//r.HandleFunc("/keysave", controllers.KeySaveAPI)
-	//r.HandleFunc("/keyrename", controllers.KeyRenameAPI)
+	r.HandleFunc("/keyrename", controllers.KeyRenameAPI)
 	//r.HandleFunc("/keyvaldel", controllers.KeyValDelAPI)
 	//r.HandleFunc("/keydata", controllers.KeyDataAPI)
 	r.HandleFunc("/logout", controllers.Logout)
