@@ -8,11 +8,16 @@ import (
 )
 
 type Sentinel struct {
+	Id int `json:"id"`
 	Hostname string `json:"hostname"`
 	Port int `json:"port"`
+	Masters []string `json:"masters"`
+	ConnectionStatus bool `json:"connection_status"`
+	MasterRediss map[string][]map[string]string `json:"master_rediss"`
+	Version string `json:"version"`
 	Hashname string `json:"hashname"`
-}
 
+}
 
 func  (s *Sentinel)GetHashName() (string) {
 	h:=md5.New()
@@ -24,15 +29,21 @@ func  (s *Sentinel)GetHashName() (string) {
 
 
 func  (s *Sentinel)Create() (bool,error) {
-	Redis.Lock()
-	defer Redis.Unlock()
-	Redis.Client.Select(0)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return false,err
+	}
+	redisClient.Select(0)
 	s.GetHashName()
+	s.MasterRediss=map[string][]map[string]string{}
+	s.Masters=[]string{}
 	jsonstr,err:=json.Marshal(s)
 	if err!=nil{
 		return false,err
 	}
-	_,err=Redis.Client.Hset("goredisadmin:sentinels:hash",s.Hashname,string(jsonstr))
+	_,err=redisClient.Hset("goredisadmin:sentinels:hash",s.Hashname,string(jsonstr))
+	go CheckHandle()
 	if err!=nil{
 		return false,err
 	}else {
@@ -41,11 +52,14 @@ func  (s *Sentinel)Create() (bool,error) {
 }
 
 func  (s *Sentinel)Del() (bool,error) {
-	Redis.Lock()
-	defer Redis.Unlock()
-	Redis.Client.Select(0)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return false,err
+	}
+	redisClient.Select(0)
 	s.GetHashName()
-	_,err:=Redis.Client.Hdel("goredisadmin:sentinels:hash",s.Hashname)
+	_,err=redisClient.Hdel("goredisadmin:sentinels:hash",s.Hashname)
 	if err!=nil{
 		return false,err
 	}else {
@@ -53,68 +67,23 @@ func  (s *Sentinel)Del() (bool,error) {
 	}
 }
 
-type SentinelsData struct {
-	Id int `json:"id"`
-	Hostname string `json:"hostname"`
-	Port int `json:"port"`
-	Masters []string `json:"masters"`
-	ConnectionStatus bool `json:"connection_status"`
-	MasterRediss map[string][]map[string]string `json:"master_rediss"`
-	Version string `json:"version"`
 
-}
-
-func GetSentinels() []SentinelsData{
-	Redis.Lock()
-	defer Redis.Unlock()
-	Redis.Client.Select(0)
-	sentinels:=[]SentinelsData{}
-	channels:=[]chan ConnStatus{}
-	sentinelslist,err:=Redis.Client.Hkeys("goredisadmin:sentinels:hash")
+func GetSentinels() (sentinels []Sentinel,err error){
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
 	if err!=nil{
-		return sentinels
+		return sentinels,err
 	}
-
+	redisClient.Select(0)
+	sentinelslist,_:=redisClient.Hkeys("goredisadmin:sentinels:hash")
 	for id,sentinelHashName:=range sentinelslist{
-		sentinelinfo,_:=Redis.Client.Hget("goredisadmin:sentinels:hash",sentinelHashName)
+		sentinelinfo,_:=redisClient.Hget("goredisadmin:sentinels:hash",sentinelHashName)
 		tmpsentinel:=&Sentinel{}
 		json.Unmarshal([]byte(sentinelinfo),tmpsentinel)
-		tmpchannel := make(chan ConnStatus)
-		go GetConnStatus(tmpsentinel.Hostname,tmpsentinel.Port,"",tmpchannel)
-		channels=append(channels,tmpchannel)
-		sentinel:=SentinelsData{Id:id,Hostname:tmpsentinel.Hostname,Port:tmpsentinel.Port}
-		sentinels=append(sentinels,sentinel)
+		tmpsentinel.Id=id
+		sentinels=append(sentinels,*tmpsentinel)
 	}
-	for i,tmpchannel:=range channels{
-		masters:=[]string{}
-		masterrediss:=make(map[string][]map[string]string)
-		var version string
-		connstatus := <-tmpchannel
-		connstatus.Client.Lock()
-		if connstatus.Err==nil{
-			mastersinfo,_:=connstatus.Client.Client.Masters()
-			for _,masterinfo:=range mastersinfo{
-				masters=append(masters,masterinfo["name"])
-				mastermaster:=map[string]string{"hostname":masterinfo["ip"],"port":masterinfo["port"]}
-				redissinfo:=[]map[string]string{mastermaster}
-				slavesinfo,_:=connstatus.Client.Client.Slaves(masterinfo["name"])
-				for _,slaveinfo:=range slavesinfo{
-					tmpinfo:=map[string]string{"hostname":slaveinfo["ip"],"port":slaveinfo["port"]}
-					redissinfo=append(redissinfo,tmpinfo)
-				}
-				masterrediss[masterinfo["name"]]=redissinfo
-			}
-			info,_:=connstatus.Client.Client.Info("Server")
-			version=info["redis_version"]
-		}
-		sentinels[i].Version=version
-		sentinels[i].Masters=masters
-		sentinels[i].ConnectionStatus=connstatus.Ping
-		sentinels[i].MasterRediss=masterrediss
-		connstatus.Client.Unlock()
-	}
-
-	return sentinels
+	return sentinels,err
 }
 
 

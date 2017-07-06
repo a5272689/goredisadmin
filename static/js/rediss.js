@@ -95,35 +95,7 @@ function tableinit() {
                 }
                 return change
             }
-        }, {
-            title: '认证',
-            align:'center',
-            valign: 'middle',
-            formatter:function (value,row,index) {
-                var change;
-                if ( row["auth_status"]){
-                    // change+='<button type="button" class="btn btn-default btn-sm" onclick="delsentinel('+row['masters'][i]+')">'+row["masters"][i]+'</button>';
-                    change='<span class="label label-success">YES</span>'
-                }else {
-                    change='<span class="label label-danger">NO</span>'
-                }
-                return change
-            }
-        }, {
-            title: 'PING',
-            align:'center',
-            valign: 'middle',
-            formatter:function (value,row,index) {
-                var change;
-                if ( row["ping_status"]){
-                    // change+='<button type="button" class="btn btn-default btn-sm" onclick="delsentinel('+row['masters'][i]+')">'+row["masters"][i]+'</button>';
-                    change='<span class="label label-success">ON</span>'
-                }else {
-                    change='<span class="label label-danger">OFF</span>'
-                }
-                return change
-            }
-        }, {
+        },{
             title: '备注',
             align:'center',
             valign: 'middle',
