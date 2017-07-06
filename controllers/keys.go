@@ -157,3 +157,30 @@ func KeysDataPersistAPI(w http.ResponseWriter, r *http.Request) {
 	jsonresult,_:=json.Marshal(result)
 	fmt.Fprint(w,string(jsonresult))
 }
+
+
+
+func KeyRenameAPI(w http.ResponseWriter, r *http.Request) {
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] KeyRenameAPI收到json串：%v,操作用户:%v",string(data),session.Get("user"))
+	jsonob,_:=simplejson.NewJson(data)
+	key,_:=jsonob.Get("key").String()
+	newkey,_:=jsonob.Get("newkey").String()
+	redisstr,_:=jsonob.Get("redis").String()
+	redislist:=strings.Split(redisstr,":")
+	redisport,_:=strconv.Atoi(redislist[1])
+	redis_db,_:=jsonob.Get("redis_db").String()
+	redis_db_index,_:=strconv.Atoi(redis_db)
+	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	renamekeys,err:=redisinfo.RenameKey(key,newkey,redis_db_index)
+	result:=new(JsonResult)
+	if err==nil{
+		if renamekeys==1{
+			result.Result=true
+		}
+	}
+	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
