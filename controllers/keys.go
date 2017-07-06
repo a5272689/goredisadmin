@@ -78,3 +78,82 @@ func KeysDataAPI(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w,string(jsonresult))
 }
 
+
+func KeysDataDelAPI(w http.ResponseWriter, r *http.Request) {
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] KeysDataDelAPI收到json串：%v,操作用户:%v",string(data),session.Get("user"))
+	jsonob,_:=simplejson.NewJson(data)
+	tmpkeyslist,_:=jsonob.Get("keys").Array()
+	keyslist:=[]string{}
+	for _,keyname:=range tmpkeyslist{
+		keyslist=append(keyslist,keyname.(string))
+	}
+	redisstr,_:=jsonob.Get("redis").String()
+	redislist:=strings.Split(redisstr,":")
+	redisport,_:=strconv.Atoi(redislist[1])
+	redis_db,_:=jsonob.Get("redis_db").String()
+	redis_db_index,_:=strconv.Atoi(redis_db)
+	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	del_keys:=redisinfo.DelKeys(keyslist,redis_db_index)
+	result:=new(JsonResult)
+	result.Result=true
+	result.Info=strings.Join(del_keys,",")
+	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
+
+
+
+
+func KeysDataExpireAPI(w http.ResponseWriter, r *http.Request) {
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] KeysDataExpireAPI收到json串：%v,操作用户:%v",string(data),session.Get("user"))
+	jsonob,_:=simplejson.NewJson(data)
+	tmpkeyslist,_:=jsonob.Get("keys").Array()
+	keyslist:=[]string{}
+	for _,keyname:=range tmpkeyslist{
+		keyslist=append(keyslist,keyname.(string))
+	}
+	redisstr,_:=jsonob.Get("redis").String()
+	seconds,_:=jsonob.Get("seconds").Int()
+	redislist:=strings.Split(redisstr,":")
+	redisport,_:=strconv.Atoi(redislist[1])
+	redis_db,_:=jsonob.Get("redis_db").String()
+	redis_db_index,_:=strconv.Atoi(redis_db)
+	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	expire_keys:=redisinfo.ExpireKeys(keyslist,seconds,redis_db_index)
+	result:=new(JsonResult)
+	result.Result=true
+	result.Info=strings.Join(expire_keys,",")
+	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
+
+func KeysDataPersistAPI(w http.ResponseWriter, r *http.Request) {
+	data, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	session := sessions.GetSession(r)
+	utils.Logger.Printf("[info] KeysDataPersistAPI收到json串：%v,操作用户:%v",string(data),session.Get("user"))
+	jsonob,_:=simplejson.NewJson(data)
+	tmpkeyslist,_:=jsonob.Get("keys").Array()
+	keyslist:=[]string{}
+	for _,keyname:=range tmpkeyslist{
+		keyslist=append(keyslist,keyname.(string))
+	}
+	redisstr,_:=jsonob.Get("redis").String()
+	redislist:=strings.Split(redisstr,":")
+	redisport,_:=strconv.Atoi(redislist[1])
+	redis_db,_:=jsonob.Get("redis_db").String()
+	redis_db_index,_:=strconv.Atoi(redis_db)
+	redisinfo:=models.RedisInfo{Hostname:redislist[0],Port:redisport}
+	persist_keys:=redisinfo.PersistKeys(keyslist,redis_db_index)
+	result:=new(JsonResult)
+	result.Result=true
+	result.Info=strings.Join(persist_keys,",")
+	jsonresult,_:=json.Marshal(result)
+	fmt.Fprint(w,string(jsonresult))
+}
