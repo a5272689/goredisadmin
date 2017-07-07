@@ -85,7 +85,7 @@ func CheckHandle()  {
 		channels=append(channels,tmpchannel)
 		sentinels=append(sentinels,*tmpsentinel)
 	}
-	sentinelsRedisInfoHashKey:=[]string{}
+	sentinelsRedisInfoHashKey:=map[string]RedisInfo{}
 	for i,tmpchannel:=range channels{
 		masters:=[]string{}
 		masterrediss:=make(map[string][]map[string]string)
@@ -103,16 +103,16 @@ func CheckHandle()  {
 				mastermaster:=map[string]string{"hostname":masterinfo["ip"],"port":masterinfo["port"]}
 				portInt,_:=strconv.Atoi(masterinfo["port"])
 				hashName:=GetHashName(masterinfo["ip"],portInt)
-				sentinelsRedisInfoHashKey=append(sentinelsRedisInfoHashKey,hashName)
-				UpdateRedisInfo(masterinfo["ip"],portInt,hashName,masterinfo["name"])
+				sentinelsRedisInfoHashKey[hashName]=RedisInfo{Hostname:masterinfo["ip"],Port:portInt,Hashname:hashName,Mastername:masterinfo["name"]}
+				//UpdateRedisInfo(masterinfo["ip"],portInt,hashName,masterinfo["name"])
 				redissinfo:=[]map[string]string{mastermaster}
 				slavesinfo,_:=tmpredisClient.Slaves(masterinfo["name"])
 				for _,slaveinfo:=range slavesinfo{
 					tmpinfo:=map[string]string{"hostname":slaveinfo["ip"],"port":slaveinfo["port"]}
 					portInt,_:=strconv.Atoi(slaveinfo["port"])
 					hashName:=GetHashName(slaveinfo["ip"],portInt)
-					sentinelsRedisInfoHashKey=append(sentinelsRedisInfoHashKey,hashName)
-					UpdateRedisInfo(slaveinfo["ip"],portInt,hashName,masterinfo["name"])
+					sentinelsRedisInfoHashKey[hashName]=RedisInfo{Hostname:slaveinfo["ip"],Port:portInt,Hashname:hashName,Mastername:slaveinfo["name"]}
+					//UpdateRedisInfo(slaveinfo["ip"],portInt,hashName,masterinfo["name"])
 					redissinfo=append(redissinfo,tmpinfo)
 				}
 				masterrediss[masterinfo["name"]]=redissinfo
@@ -134,8 +134,9 @@ func CheckHandle()  {
 		redisClient.Hset("goredisadmin:sentinels:hash",sentinels[i].Hashname,string(jsonstr))
 	}
 	allRedisInfo,_:=redisClient.Hgetall("goredisadmin:rediss:hash")
-	for _,redisInofHashKey:=range sentinelsRedisInfoHashKey{
-		delete(allRedisInfo,redisInofHashKey)
+	for redisInfoHashKey,redisInfo:=range sentinelsRedisInfoHashKey{
+		delete(allRedisInfo,redisInfoHashKey)
+		UpdateRedisInfo(redisInfo.Hostname,redisInfo.Port,redisInfo.Hashname,redisInfo.Mastername)
 	}
 	for hashName,redisInfoStr:=range allRedisInfo{
 		redisinfo:=&RedisInfo{}
