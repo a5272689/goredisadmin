@@ -111,7 +111,7 @@ func CheckHandle()  {
 					tmpinfo:=map[string]string{"hostname":slaveinfo["ip"],"port":slaveinfo["port"]}
 					portInt,_:=strconv.Atoi(slaveinfo["port"])
 					hashName:=GetHashName(slaveinfo["ip"],portInt)
-					sentinelsRedisInfoHashKey[hashName]=RedisInfo{Hostname:slaveinfo["ip"],Port:portInt,Hashname:hashName,Mastername:slaveinfo["name"]}
+					sentinelsRedisInfoHashKey[hashName]=RedisInfo{Hostname:slaveinfo["ip"],Port:portInt,Hashname:hashName,Mastername:masterinfo["name"]}
 					//UpdateRedisInfo(slaveinfo["ip"],portInt,hashName,masterinfo["name"])
 					redissinfo=append(redissinfo,tmpinfo)
 				}
@@ -191,6 +191,6 @@ func UpdateRedisInfo(host string,port int,hashName,masterName string)  {
 			redisinfo.Dbs,_=strconv.Atoi(databases_str["databases"])
 		}
 	}
-	utils.Logger.Printf("主机：%v 端口：%v 密码：%v 更新",host,port,redisinfo.Password)
+	utils.Logger.Printf("主机：%v 端口：%v 密码：%v mastername:%v 更新",host,port,redisinfo.Password,masterName)
 	redisinfo.Save()
 }
