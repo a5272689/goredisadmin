@@ -189,6 +189,8 @@ func UpdateRedisInfo(host string,port int,hashName,masterName string)  {
 			redisinfo.Keys=keys
 			databases_str,_:=tmpRedisClient.ConfigGet("databases")
 			redisinfo.Dbs,_=strconv.Atoi(databases_str["databases"])
+		}else {
+			redisinfo.ConnectionStatus=false
 		}
 	}
 	utils.Logger.Printf("主机：%v 端口：%v 密码：%v mastername:%v 更新",host,port,redisinfo.Password,masterName)
