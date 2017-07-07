@@ -63,7 +63,7 @@ func CheckRedis()  {
 	utils.Logger.Println("开始检测！！")
 	for {
 		go CheckHandle()
-		time.Sleep(time.Minute*30)
+		time.Sleep(time.Minute*10)
 	}
 
 
