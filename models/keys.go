@@ -260,151 +260,243 @@ func (r *RedisInfo) LpushKey(key string,value interface{},dbindex int) (int, err
 	return redisC.Lpush(key,value)
 }
 
-//func (r *RedisInfo) LsetKey(key string,index int,value interface{},dbindex int) (string, error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Lset(key,index,value)
-//}
-//
-//
-//func (r *RedisInfo) SaddKey(key string,value interface{},dbindex int) (int, error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Sadd(key,value)
-//}
-//
-//func (r *RedisInfo) ZaddKey(key string,score int,value interface{},dbindex int) (int, error) {
-//	utils.Logger.Println(key,score,value,dbindex)
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Zadd(key,score,value)
-//}
-//
-//func (r *RedisInfo) GetKey(key string,dbindex int) (string, error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Get(key)
-//}
-//
-//
-//func (r *RedisInfo) HmgetKey(key string,dbindex int) (map[string]string, error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Hgetall(key)
-//}
-//
-//
-//func (r *RedisInfo) LrangeKey(key string,dbindex int) ([]string, error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Lrange(key,0,-1)
-//}
-//
-//func (r *RedisInfo) SmembersKey(key string,dbindex int) ([]string, error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Smembers(key)
-//}
-//
-//func (r *RedisInfo) TtlKey(key string,dbindex int) (int, error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Ttl(key)
-//}
-//
-//func (r *RedisInfo) TypeKey(key string,dbindex int) (string, error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Type(key)
-//}
-//
-//
-//func (r *RedisInfo) ZrangeKey(key string,dbindex int) ([]string, error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Zrange(key,0,-1,true)
-//}
-//
+func (r *RedisInfo) LsetKey(key string,index int,value interface{},dbindex int) (string, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return "",err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return "",err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return "",err
+	}
+	redisC.Select(dbindex)
+	return redisC.Lset(key,index,value)
+}
+
+
+func (r *RedisInfo) SaddKey(key string,value interface{},dbindex int) (int, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return 0,err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return 0,err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return 0,err
+	}
+	redisC.Select(dbindex)
+	return redisC.Sadd(key,value)
+}
+
+func (r *RedisInfo) ZaddKey(key string,score int,value interface{},dbindex int) (int, error) {
+	utils.Logger.Println(key,score,value,dbindex)
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return 0,err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return 0,err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return 0,err
+	}
+	redisC.Select(dbindex)
+	return redisC.Zadd(key,score,value)
+}
+
+func (r *RedisInfo) GetKey(key string,dbindex int) (string, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return "",err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return "",err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return "",err
+	}
+	redisC.Select(dbindex)
+	return redisC.Get(key)
+}
+
+
+func (r *RedisInfo) HmgetKey(key string,dbindex int) (map[string]string, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return map[string]string{},err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return map[string]string{},err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return map[string]string{},err
+	}
+	redisC.Select(dbindex)
+	return redisC.Hgetall(key)
+}
+
+
+func (r *RedisInfo) LrangeKey(key string,dbindex int) ([]string, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return []string{},err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return []string{},err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return []string{},err
+	}
+	redisC.Select(dbindex)
+	return redisC.Lrange(key,0,-1)
+}
+
+func (r *RedisInfo) SmembersKey(key string,dbindex int) ([]string, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return []string{},err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return []string{},err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return []string{},err
+	}
+	redisC.Select(dbindex)
+	return redisC.Smembers(key)
+}
+
+
+
+func (r *RedisInfo) ZrangeKey(key string,dbindex int) ([]string, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return []string{},err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return []string{},err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return []string{},err
+	}
+	redisC.Select(dbindex)
+	return redisC.Zrange(key,0,-1,true)
+}
+
+
+func (r *RedisInfo) TtlKey(key string,dbindex int) (int, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return 0,err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return 0,err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return 0,err
+	}
+	redisC.Select(dbindex)
+	return redisC.Ttl(key)
+}
+
+func (r *RedisInfo) TypeKey(key string,dbindex int) (string, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return "",err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return "",err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return "",err
+	}
+	redisC.Select(dbindex)
+	return redisC.Type(key)
+}
+
 func (r *RedisInfo) RenameKey(key,newkey string,dbindex int) (int, error) {
 	r.Hashname=GetHashName(r.Hostname,r.Port)
 	redisClient,err:=RedisPool.Get()
@@ -427,73 +519,118 @@ func (r *RedisInfo) RenameKey(key,newkey string,dbindex int) (int, error) {
 	redisC.Select(dbindex)
 	return redisC.Renamenx(key,newkey)
 }
-//
-//func (r *RedisInfo) DelStrValKey(key string,dbindex int) (string, error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Set(key,"")
-//}
-//
-//func (r *RedisInfo) DelHashValKey(key string,field string,dbindex int) (int, error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Hdel(key,field)
-//}
-//
-//func (r *RedisInfo) DelListValKey(key string,index int,dbindex int) (error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Ldel(key,index)
-//}
-//
-//func (r *RedisInfo) DelSetValKey(key,member string,dbindex int) (int,error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Srem(key,member)
-//}
-//
-//func (r *RedisInfo) DelZsetValKey(key,member string,dbindex int) (int,error) {
-//	r.Hashname=GetHashName(r.Hostname,r.Port)
-//	Redis.Lock()
-//	defer Redis.Unlock()
-//	redisinfostr,_:=Redis.Client.Hget("goredisadmin:rediss:hash",r.Hashname)
-//	json.Unmarshal([]byte(redisinfostr),r)
-//	utils.Logger.Println(r)
-//	redisC, _, _, _, _ := NewRedis(r.Hostname,r.Port, r.Password)
-//	redisC.Lock()
-//	defer redisC.Unlock()
-//	redisC.Client.Select(dbindex)
-//	return redisC.Client.Zrem(key,member)
-//}
+
+func (r *RedisInfo) DelStrValKey(key string,dbindex int) (string, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return "",err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return "",err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return "",err
+	}
+	redisC.Select(dbindex)
+	return redisC.Set(key,"")
+}
+
+func (r *RedisInfo) DelHashValKey(key string,field string,dbindex int) (int, error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return 0,err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return 0,err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return 0,err
+	}
+	redisC.Select(dbindex)
+	return redisC.Hdel(key,field)
+}
+
+func (r *RedisInfo) DelListValKey(key string,index int,dbindex int) (error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return err
+	}
+	redisC.Select(dbindex)
+	return redisC.Ldel(key,index)
+}
+
+func (r *RedisInfo) DelSetValKey(key,member string,dbindex int) (int,error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return 0,err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return 0,err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return 0,err
+	}
+	redisC.Select(dbindex)
+	return redisC.Srem(key,member)
+}
+
+func (r *RedisInfo) DelZsetValKey(key,member string,dbindex int) (int,error) {
+	r.Hashname=GetHashName(r.Hostname,r.Port)
+	redisClient,err:=RedisPool.Get()
+	defer RedisPool.Put(redisClient)
+	if err!=nil{
+		return 0,err
+	}
+	redisinfostr,_:=redisClient.Hget("goredisadmin:rediss:hash",r.Hashname)
+	json.Unmarshal([]byte(redisinfostr),r)
+	utils.Logger.Println(r)
+	redisPool, err := NewPool(r.Hostname,r.Port, r.Password)
+	if err!=nil{
+		return 0,err
+	}
+	redisC,err:=redisPool.Get()
+	defer redisPool.Put(redisC)
+	if err!=nil{
+		return 0,err
+	}
+	redisC.Select(dbindex)
+	return redisC.Zrem(key,member)
+}
